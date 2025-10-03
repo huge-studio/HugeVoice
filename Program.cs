@@ -3,10 +3,21 @@ using HugeVox.Hubs;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddServerSideBlazor(options =>
+{
+    // Enable detailed errors for development
+    options.DetailedErrors = builder.Environment.IsDevelopment();
+});
+
 builder.Services.AddSignalR(options =>
 {
-    options.MaximumReceiveMessageSize = 1024 * 1024;
+    // Increase message size limits for audio data
+    options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10MB
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    
+    // Set timeouts for better connection stability
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
 });
 
 var app = builder.Build();
