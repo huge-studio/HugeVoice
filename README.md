@@ -24,24 +24,24 @@ A modern, mobile-responsive Blazor Server application for real-time audio broadc
 
 ```
 HugeVox/
-??? HugeVox.csproj                # Project file
-??? Program.cs                     # Application entry point
-??? AudioStreamHub.cs              # SignalR hub for audio streaming
-??? Pages/
-?   ??? _Host.cshtml              # Main HTML host page
-??? Components/
-?   ??? _Imports.razor            # Global using directives
-?   ??? App.razor                 # Root component
-?   ??? Layout/
-?   ?   ??? MainLayout.razor      # Main layout with navigation
-?   ??? Pages/
-?       ??? Home.razor            # Landing page
-?       ??? Broadcast.razor       # Broadcasting page
-?       ??? Listen.razor          # Listening page
-??? wwwroot/
-    ??? audio.js                  # Audio capture/playback logic
-    ??? css/
-        ??? app.css              # Custom styles
+  HugeVox.csproj           # Project file
+  Program.cs               # Application entry point
+  AudioStreamHub.cs        # SignalR hub for audio streaming
+  Pages/
+    _Host.cshtml           # Main HTML host page
+  Components/
+    _Imports.razor         # Global using directives
+    App.razor              # Root component
+    Layout/
+      MainLayout.razor     # Main layout with navigation
+    Pages/
+      Home.razor           # Landing page
+      Broadcast.razor      # Broadcasting page
+      Listen.razor         # Listening page
+  wwwroot/
+    audio.js               # Audio capture/playback logic
+    css/
+      app.css              # Custom styles
 ```
 
 ## Getting Started
