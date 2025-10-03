@@ -4,12 +4,12 @@ A modern, mobile-responsive Blazor Server application for real-time audio broadc
 
 ## Features
 
-- ??? **Real-time Audio Streaming** - Broadcast audio to multiple listeners in real-time  
-- ?? **Mobile Responsive** - Fully optimized for mobile, tablet, and desktop devices  
-- ?? **Modern UI** - Bootstrap 5 with custom styling and animations  
-- ?? **QR Code Sharing** - Easy listener access via QR code scanning  
-- ? **Easy Broadcasting** - One-click start/stop broadcasting with visual feedback  
-- ?? **Simple Listening** - Automatic connection and audio playback  
+- **Real-time Audio Streaming** - Broadcast audio to multiple listeners in real-time  
+- **Mobile Responsive** - Fully optimized for mobile, tablet, and desktop devices  
+- **Modern UI** - Bootstrap 5 with custom styling and animations  
+- **QR Code Sharing** - Easy listener access via QR code scanning  
+- **Easy Broadcasting** - One-click start/stop broadcasting with visual feedback  
+- **Simple Listening** - Automatic connection and audio playback  
 
 ## Technology Stack
 
@@ -84,9 +84,9 @@ dotnet run
 
 The application is fully responsive and works seamlessly on:
 
-- ?? **Mobile phones** (iOS & Android)
-- ?? **Tablets** (iPad, Android tablets)
-- ??? **Desktop browsers** (Chrome, Firefox, Safari, Edge)
+- **Mobile phones** (iOS & Android)
+- **Tablets** (iPad, Android tablets)
+- **Desktop browsers** (Chrome, Firefox, Safari, Edge)
 
 ### Mobile Features
 
@@ -98,11 +98,11 @@ The application is fully responsive and works seamlessly on:
 
 ## Browser Support
 
-- ? Chrome (recommended)
-- ? Firefox
-- ? Safari
-- ? Edge
-- ?? Requires microphone permissions for broadcasting
+- Chrome (recommended)
+- Firefox
+- Safari
+- Edge
+- **Note:** Requires microphone permissions for broadcasting
 
 ## Architecture
 
@@ -173,7 +173,7 @@ This project is open source and available under the MIT License.
 
 ## Credits
 
-Built with ?? using .NET 9, Blazor Server, and Bootstrap 5.
+Built with love using .NET 9, Blazor Server, and Bootstrap 5.
 
 ---
 
