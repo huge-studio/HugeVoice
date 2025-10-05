@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11018.127 d18.0
+VisualStudioVersion = 18.0.11018.127
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HugeVox", "HugeVox.csproj", "{3E22BA27-4226-A07B-CBB0-951E875B2EE4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HugeVox.Client", "HugeVox.Client\HugeVox.Client.csproj", "{98F90F76-2C3C-90FA-6124-591EB0B632FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HugeVox.Server", "HugeVox.Server\HugeVox.Server.csproj", "{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3E22BA27-4226-A07B-CBB0-951E875B2EE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3E22BA27-4226-A07B-CBB0-951E875B2EE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3E22BA27-4226-A07B-CBB0-951E875B2EE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3E22BA27-4226-A07B-CBB0-951E875B2EE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98F90F76-2C3C-90FA-6124-591EB0B632FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98F90F76-2C3C-90FA-6124-591EB0B632FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98F90F76-2C3C-90FA-6124-591EB0B632FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98F90F76-2C3C-90FA-6124-591EB0B632FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

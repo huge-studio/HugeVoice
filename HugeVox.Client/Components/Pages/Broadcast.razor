@@ -1,0 +1,276 @@
+@page "/broadcast"
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.JSInterop
+@using QRCoder
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>Broadcast - HugeVox</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10 col-xl-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white py-3">
+                <h3 class="mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-mic-fill me-2 mb-1" viewBox="0 0 16 16">
+                        <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/>
+                        <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
+                    </svg>
+                    Audio Broadcaster
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-12 col-md-6 text-center mb-4 mb-md-0">
+                        <h5 class="mb-3">Share this QR Code</h5>
+                        @if (!string.IsNullOrEmpty(_qrCodeDataUrl))
+                        {
+                            <div class="qr-code-container mb-3">
+                                <img src="@_qrCodeDataUrl" alt="QR Code" class="img-fluid rounded shadow-sm" style="max-width: 250px;" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="spinner-border text-success mb-3" role="status">
+                                <span class="visually-hidden">Generating QR Code...</span>
+                            </div>
+                        }
+                        <div class="alert alert-info">
+                            <small>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle me-1" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                </svg>
+                                Listeners can scan this to join
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <h5 class="mb-3">Broadcast Details</h5>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Room ID</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" value="@_roomId" readonly />
+                                <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('@_roomId')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted small">Listener URL</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace small" value="@_listenerUrl" readonly />
+                                <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('@_listenerUrl')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            @if (_hubConnection?.State != HubConnectionState.Connected)
+                            {
+                                <div class="alert alert-warning">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
+                                        <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                                    <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
+                                    </svg>
+                                    <strong>Connection Status:</strong> @(_hubConnection?.State.ToString() ?? "Not Connected")
+                                </div>
+                            }
+                            
+                            @if (!_isRecording)
+                            {
+                                <button @onclick="StartRecording" class="btn btn-success btn-lg" disabled="@(_hubConnection?.State != HubConnectionState.Connected)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-circle me-2" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                        <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
+                                    </svg>
+                                    Start Broadcasting
+                                </button>
+                            }
+                            else
+                            {
+                                <button @onclick="StopRecording" class="btn btn-danger btn-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-stop-circle me-2" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                        <path d="M5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5v-3z"/>
+                                    </svg>
+                                    Stop Broadcasting
+                                </button>
+                                <div class="alert alert-success d-flex align-items-center mb-0" role="alert">
+                                    <div class="spinner-grow spinner-grow-sm text-success me-2" role="status">
+                                        <span class="visually-hidden">Broadcasting...</span>
+                                    </div>
+                                    <div>
+                                        <strong>● Live Broadcasting</strong><br />
+                                        <small>Your audio is being streamed</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-warning mt-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
+                <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
+            </svg>
+            <strong>Note:</strong> Your browser will request microphone permission. Please allow access to start broadcasting.
+        </div>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger mt-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
+                    <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
+                </svg>
+                <strong>Error:</strong> @_errorMessage
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private HubConnection? _hubConnection;
+    private string _roomId = Guid.NewGuid().ToString();
+    private string _listenerUrl = "";
+    private string _qrCodeDataUrl = "";
+    private bool _isRecording = false;
+    private IJSObjectReference? _jsModule;
+    private string _errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _listenerUrl = $"{Navigation.BaseUri}listen/{_roomId}";
+        GenerateQRCode();
+
+        try
+        {
+            Console.WriteLine($"Attempting to connect to SignalR hub at: {Navigation.ToAbsoluteUri("/audiohub")}");
+            
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri("/audiohub")) // Connect to same origin
+                .Build();
+
+            await _hubConnection.StartAsync();
+            await _hubConnection.InvokeAsync("JoinRoom", _roomId);
+            
+            Console.WriteLine($"Successfully connected to SignalR hub and joined room: {_roomId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SignalR connection error: {ex}");
+            _errorMessage = $"Failed to connect to audio hub: {ex.Message}";
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                Console.WriteLine("Loading audio.js module...");
+                _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./audio.js");
+                Console.WriteLine("Audio.js module loaded successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading audio module: {ex}");
+                _errorMessage = $"Failed to load audio module: {ex.Message}";
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void GenerateQRCode()
+    {
+        using var qrGenerator = new QRCodeGenerator();
+        using var qrCodeData = qrGenerator.CreateQrCode(_listenerUrl, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(qrCodeData);
+        var qrCodeBytes = qrCode.GetGraphic(20);
+        _qrCodeDataUrl = $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
+    }
+
+    private async Task StartRecording()
+    {
+        try
+        {
+            _errorMessage = "";
+            _isRecording = true;
+            if (_jsModule != null)
+            {
+                await _jsModule.InvokeVoidAsync("startRecording", 
+                    DotNetObjectReference.Create(this));
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to start recording: {ex.Message}";
+            _isRecording = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task StopRecording()
+    {
+        try
+        {
+            _isRecording = false;
+            if (_jsModule != null)
+            {
+                await _jsModule.InvokeVoidAsync("stopRecording");
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to stop recording: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task SendAudioData(string base64AudioData)
+    {
+        try
+        {
+            if (_hubConnection != null && _isRecording && !string.IsNullOrEmpty(base64AudioData))
+            {
+                // Convert base64 string back to byte array
+                var audioData = Convert.FromBase64String(base64AudioData);
+                await _hubConnection.InvokeAsync("SendAudioChunk", _roomId, audioData);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending audio data: {ex.Message}");
+            // Don't show UI error for individual audio packets to avoid spam
+            // but log for debugging
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection != null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+        if (_jsModule != null)
+        {
+            await _jsModule.DisposeAsync();
+        }
+    }
+}
