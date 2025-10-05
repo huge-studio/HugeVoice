@@ -1,4 +1,4 @@
-using HugeVox.Server.Hubs;
+using HugeVoice.Server.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 

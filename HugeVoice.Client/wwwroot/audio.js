@@ -1,4 +1,4 @@
-// Audio recording and playback functionality for HugeVox
+// Audio recording and playback functionality for HugeVoice
 
 let mediaRecorder = null;
 let audioContext = null;

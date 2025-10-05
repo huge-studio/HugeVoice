@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 
-namespace HugeVox.Server.Hubs;
+namespace HugeVoice.Server.Hubs;
 
 public class AudioStreamHub : Hub
 {
