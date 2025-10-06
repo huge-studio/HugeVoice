@@ -1,424 +1,162 @@
 @page "/about"
-@using Microsoft.JSInterop
-@inject IJSRuntime JS
-@implements IAsyncDisposable
 
 <PageTitle>About - HugeVoice</PageTitle>
 
 <div class="row justify-content-center">
-    <div class="col-12 col-lg-10 col-xl-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white py-3">
-                <h3 class="mb-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-info-circle me-2 mb-1" viewBox="0 0 16 16">
-                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-                    </svg>
-                    About HugeVoice
-                </h3>
+    <div class="col-12 col-md-10 col-lg-8">
+        <div class="text-center mb-5 mt-4">
+            <div class="mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-broadcast-pin text-primary" viewBox="0 0 16 16">
+                    <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM6 8a2 2 0 1 1 2.5 1.937V15.5a.5.5 0 0 1-1 0V9.937A2 2 0 0 1 6 8z" />
+                </svg>
             </div>
-            <div class="card-body p-4">
-                <div class="row">
-                    <div class="col-12 col-md-8">
-                        <h4 class="mb-3">Real-time Audio Broadcasting</h4>
-                        <p class="lead">
-                            HugeVoice is a web-based real-time audio broadcasting platform that allows you to create named channels 
-                            and stream audio to multiple listeners simultaneously.
-                        </p>
-                        
-                        <h5 class="mt-4 mb-3">Key Features</h5>
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle text-success me-2" viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
-                                </svg>
-                                <strong>Fun Channel Names:</strong> Auto-generated names like "Happy-Panda" and "Brave-Bear"
-                            </li>
-                            <li class="mb-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle text-success me-2" viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
-                                </svg>
-                                <strong>QR Code Sharing:</strong> Easily share channels with QR codes
-                            </li>
-                            <li class="mb-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle text-success me-2" viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
-                                </svg>
-                                <strong>Single Broadcaster:</strong> Only one broadcaster per channel prevents conflicts
-                            </li>
-                            <li class="mb-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle text-success me-2" viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
-                                </svg>
-                                <strong>Channel Persistence:</strong> Channels stay open when broadcasters leave
-                            </li>
-                            <li class="mb-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle text-success me-2" viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
-                                </svg>
-                                <strong>Cross-Platform:</strong> Works on desktop, mobile, and tablets
-                            </li>
-                        </ul>
+            <h1 class="display-4 fw-bold text-primary mb-3">About HugeVoice</h1>
+            <p class="lead text-muted">Real-time audio broadcasting for the crowd</p>
+        </div>
 
-                        <h5 class="mt-4 mb-3">Technology Stack</h5>
-                        <p>
-                            HugeVoice is built with <strong>.NET 9</strong>, <strong>Blazor WebAssembly</strong>, and <strong>SignalR</strong> 
-                            for real-time communication. Audio processing uses the <strong>Web Audio API</strong> with special optimizations 
-                            for Safari and iOS devices.
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <h3 class="h4 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-lightbulb me-2 text-warning" viewBox="0 0 16 16">
+                        <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.459-.31l-.762-1.77A1.928 1.928 0 0 0 3.826 10.31 6.002 6.002 0 0 1 2 6zm6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1z" />
+                    </svg>
+                    The Origin Story
+                </h3>
+                <p class="mb-3">
+                    HugeVoice was born from a simple but frustrating problem we've all experienced: being at the back of a crowd and never being able to hear what folks are saying at the front. During a conversation with friends about this universal struggle, <strong>Mark Davis</strong> had a brilliant insight:
+                </p>
+                <blockquote class="blockquote border-start border-primary border-4 ps-3 mb-3">
+                    <p class="mb-0">"We could use their phones as speakers and allow folks to jump on the channel using QR codes."</p>
+                    <footer class="blockquote-footer mt-2">Mark Davis</footer>
+                </blockquote>
+                <p>
+                    This idea sparked something bigger - a conversation about what the <strong>post-platform internet</strong> should look like. A world where technology serves people directly, without corporate intermediaries controlling the flow of information.
+                </p>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-md-6">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h4 class="h5 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-shield-check me-2 text-success" viewBox="0 0 16 16">
+                                <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z" />
+                                <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+                            </svg>
+                            Privacy First
+                        </h4>
+                        <p class="mb-0">
+                            <strong>No recording, ever.</strong> At no time is any part of the audio stream recorded by our servers. You can speak freely knowing your conversations remain private and ephemeral.
                         </p>
                     </div>
-                    
-                    <div class="col-12 col-md-4">
-                        <div class="card bg-light border-0">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="mb-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-speaker me-2" viewBox="0 0 16 16">
-                                        <path d="M9 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-2.5 6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-                                        <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4zm6 4a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 7a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z"/>
-                                    </svg>
-                                    Audio Test
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <p class="small text-muted mb-3">
-                                    Test your browser's audio capabilities, especially useful for Safari and iOS users.
-                                </p>
-                                
-                                @if (!_audioTested)
-                                {
-                                    <button @onclick="TestAudio" class="btn btn-info btn-sm w-100 mb-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play-circle me-1" viewBox="0 0 16 16">
-                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                            <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
-                                        </svg>
-                                        Test Audio Playback
-                                    </button>
-                                }
-                                else
-                                {
-                                    <div class="alert alert-success alert-sm p-2 mb-2">
-                                        <small>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-check-circle me-1" viewBox="0 0 16 16">
-                                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                                <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
-                                            </svg>
-                                            Audio test completed!
-                                        </small>
-                                    </div>
-                                    <button @onclick="TestAudio" class="btn btn-outline-info btn-sm w-100 mb-2">
-                                        Test Again
-                                    </button>
-                                }
-                                
-                                <div class="mt-2">
-                                    <small class="text-muted">
-                                        <strong>Browser:</strong> @_browserInfo<br/>
-                                        <strong>Audio Context:</strong> @_audioContextInfo
-                                    </small>
-                                </div>
-                                
-                                @if (!string.IsNullOrEmpty(_audioTestError))
-                                {
-                                    <div class="alert alert-warning alert-sm p-2 mt-2">
-                                        <small>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-exclamation-triangle me-1" viewBox="0 0 16 16">
-                                                <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-                                            </svg>
-                                            @_audioTestError
-                                        </small>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-
-                        @if (_browserInfo.Contains("iPhone"))
-                        {
-                            <div class="card bg-warning-subtle border-warning mt-3">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-phone me-2" viewBox="0 0 16 16">
-                                            <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/>
-                                            <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                                        </svg>
-                                        ?? iPhone-Specific Setup
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <p class="small mb-2"><strong>iPhones need special audio setup. Follow ALL these steps:</strong></p>
-                                    <ol class="small mb-2">
-                                        <li><strong>Silent Switch:</strong> Check the switch above volume buttons - NO orange should be visible</li>
-                                        <li><strong>Volume Buttons:</strong> Press the UP volume button several times</li>
-                                        <li><strong>Control Center:</strong> Swipe down from top-right, ensure media volume is high</li>
-                                        <li><strong>Test Audio:</strong> Click "Test Audio Playback" above</li>
-                                        <li><strong>Listen Page:</strong> Always tap "?? Enable iPhone Audio" button when listening</li>
-                                    </ol>
-                                    
-                                    <div class="alert alert-info p-2 mt-2 mb-2">
-                                        <small>
-                                            <strong>Still No Sound?</strong>
-                                            <br/>• Try plugging in headphones, then unplug them
-                                            <br/>• Close Safari completely (swipe up, swipe up on Safari)
-                                            <br/>• Disable Low Power Mode: Settings > Battery
-                                            <br/>• Check Do Not Disturb is off
-                                            <br/>• Restart Safari and try again
-                                        </small>
-                                    </div>
-                                    
-                                    <button @onclick="TestIPhoneSpecificAudio" class="btn btn-warning btn-sm w-100">
-                                        ?? iPhone Audio Test
-                                    </button>
-                                    
-                                    @if (!string.IsNullOrEmpty(_iPhoneTestResult))
-                                    {
-                                        <div class="alert @(_iPhoneTestResult.Contains("?") ? "alert-success" : "alert-danger") p-2 mt-2">
-                                            <small>@_iPhoneTestResult</small>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                        else if (_browserInfo.Contains("Safari") || _browserInfo.Contains("iPad"))
-                        {
-                            <div class="card bg-warning-subtle border-warning mt-3">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-phone me-2" viewBox="0 0 16 16">
-                                            <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/>
-                                            <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                                        </svg>
-                                        Safari/iOS Tips
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="small mb-0">
-                                        <li>Always tap "Enable Audio Playback" when listening</li>
-                                        <li>Make sure your device is not in silent mode</li>
-                                        <li>Check that volume is turned up</li>
-                                        <li>Try using headphones for better audio quality</li>
-                                        <li>If audio doesn't work, try refreshing the page</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        }
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h4 class="h5 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-globe me-2 text-info" viewBox="0 0 16 16">
+                                <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5H3.82zm6.853 3.472A7.024 7.024 0 0 0 13.745 12H11.91a9.27 9.27 0 0 1-.64 1.539 6.688 6.688 0 0 1-.597.933zM8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855.173-.324.33-.682.468-1.068H8.5zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.65 13.65 0 0 1-.312 2.5zm2.802-3.5a6.959 6.959 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5h2.49zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7.024 7.024 0 0 0-3.072-2.472c.218.284.418.598.597.933zM10.855 4a7.966 7.966 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4h2.355z" />
+                            </svg>
+                            Open Source
+                        </h4>
+                        <p class="mb-0">
+                            HugeVoice is completely open source under the <strong>MIT License</strong>. Explore the code, contribute, or host your own instance. Transparency and community ownership are core values.
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <h3 class="h4 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-code-slash me-2 text-primary" viewBox="0 0 16 16">
+                        <path d="M10.478 1.647a.5.5 0 1 0-.956-.294l-4 13a.5.5 0 0 0 .956.294l4-13zM4.854 4.146a.5.5 0 0 1 0 .708L1.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm6.292 0a.5.5 0 0 0 0 .708L14.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z" />
+                    </svg>
+                    Tech Stack
+                </h3>
+                <p class="mb-3">Built with modern web technologies for performance and reliability:</p>
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="fw-bold text-primary">Blazor</div>
+                            <small class="text-muted">WebAssembly</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="fw-bold text-primary">SignalR</div>
+                            <small class="text-muted">WebSockets</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="fw-bold text-primary">C#</div>
+                            <small class="text-muted">Liberal use</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="fw-bold text-primary">JavaScript</div>
+                            <small class="text-muted">A dash of</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-md-6">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body p-4 text-center">
+                        <h4 class="h5 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cloud me-2 text-info" viewBox="0 0 16 16">
+                                <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383zm.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z" />
+                            </svg>
+                            Hosted by CodeChops.org
+                        </h4>
+                        <p class="mb-0">
+                            Part of the <strong>HUGE</strong> ecosystem - available as both a stand-alone app and as a module for integration into other platforms.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body p-4 text-center">
+                        <h4 class="h5 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-github me-2" viewBox="0 0 16 16">
+                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                            </svg>
+                            Open Source
+                        </h4>
+                        <p class="mb-3">Explore the code and contribute:</p>
+                        <a href="https://github.com/huge-studio/HugeVoice" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-up-right me-1" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z" />
+                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z" />
+                            </svg>
+                            View on GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-light border-0 shadow-sm text-center">
+            <h4 class="h5 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-heart me-2 text-danger" viewBox="0 0 16 16">
+                    <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z" />
+                </svg>
+                The Post-Platform Internet
+            </h4>
+            <p class="mb-0">
+                HugeVoice is more than just an app - it's a vision of technology that serves people directly,
+                fostering genuine human connection without corporate intermediaries.
+                <strong>Built by the community, for the community.</strong>
+            </p>
+        </div>
     </div>
 </div>
-
-@code {
-    private IJSObjectReference? _jsModule;
-    private bool _audioTested = false;
-    private string _browserInfo = "";
-    private string _audioContextInfo = "Not tested";
-    private string _audioTestError = "";
-    private string _iPhoneTestResult = "";
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            try
-            {
-                _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./audio.js");
-                _browserInfo = await JS.InvokeAsync<string>("eval", "navigator.userAgent");
-                
-                // Extract browser name for display
-                if (_browserInfo.Contains("iPhone"))
-                    _browserInfo = "iPhone Safari";
-                else if (_browserInfo.Contains("iPad"))
-                    _browserInfo = "iPad Safari";
-                else if (_browserInfo.Contains("Chrome") && !_browserInfo.Contains("Edge"))
-                    _browserInfo = "Chrome";
-                else if (_browserInfo.Contains("Firefox"))
-                    _browserInfo = "Firefox";
-                else if (_browserInfo.Contains("Safari") && !_browserInfo.Contains("Chrome"))
-                    _browserInfo = "Safari";
-                else if (_browserInfo.Contains("Edge"))
-                    _browserInfo = "Edge";
-                else
-                    _browserInfo = "Unknown";
-                
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                _audioTestError = $"Failed to load audio module: {ex.Message}";
-                StateHasChanged();
-            }
-        }
-    }
-
-    private async Task TestAudio()
-    {
-        try
-        {
-            _audioTestError = "";
-            
-            if (_jsModule != null)
-            {
-                // Activate audio context first
-                var activated = await _jsModule.InvokeAsync<bool>("activateAudioContext");
-                
-                if (activated)
-                {
-                    _audioContextInfo = "Activated successfully";
-                    
-                    // Create a simple test tone (440Hz A note for 0.5 seconds)
-                    var testAudioData = GenerateTestTone(440, 0.5, _browserInfo.Contains("iPhone") ? 44100 : 16000);
-                    var base64Audio = Convert.ToBase64String(testAudioData);
-                    
-                    await _jsModule.InvokeVoidAsync("playAudio", base64Audio);
-                    
-                    _audioTested = true;
-                    _audioTestError = "";
-                }
-                else
-                {
-                    _audioContextInfo = "Failed to activate";
-                    _audioTestError = "Could not activate audio context. User interaction required.";
-                }
-            }
-            else
-            {
-                _audioTestError = "Audio module not loaded";
-            }
-            
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            _audioTestError = $"Audio test failed: {ex.Message}";
-            _audioContextInfo = "Error";
-            StateHasChanged();
-        }
-    }
-
-    private async Task TestIPhoneSpecificAudio()
-    {
-        try
-        {
-            _iPhoneTestResult = "";
-            
-            if (_jsModule != null)
-            {
-                // iPhone-specific comprehensive test
-                var testResults = new List<string>();
-                
-                // Test 1: Audio context activation
-                var activated = await _jsModule.InvokeAsync<bool>("activateAudioContext");
-                testResults.Add(activated ? "? Audio context activated" : "? Audio context failed");
-                
-                if (activated)
-                {
-                    // Test 2: Get audio context details
-                    var contextState = await JS.InvokeAsync<string>("eval", 
-                        "window.audioContext ? window.audioContext.state : 'no context'");
-                    var sampleRate = await JS.InvokeAsync<string>("eval", 
-                        "window.audioContext ? window.audioContext.sampleRate : 'unknown'");
-                    
-                    testResults.Add($"? Context state: {contextState}");
-                    testResults.Add($"? Sample rate: {sampleRate} Hz");
-                    
-                    // Test 3: Play iPhone-optimized test tone
-                    try
-                    {
-                        var testToneResult = await JS.InvokeAsync<bool>("eval", @"
-                            (function() {
-                                try {
-                                    if (!window.audioContext) return false;
-                                    
-                                    // iPhone-specific test with multiple frequencies
-                                    const oscillator1 = window.audioContext.createOscillator();
-                                    const oscillator2 = window.audioContext.createOscillator();
-                                    const gainNode = window.audioContext.createGain();
-                                    
-                                    oscillator1.frequency.setValueAtTime(523, window.audioContext.currentTime); // C5
-                                    oscillator2.frequency.setValueAtTime(659, window.audioContext.currentTime); // E5
-                                    gainNode.gain.setValueAtTime(0.1, window.audioContext.currentTime);
-                                    
-                                    oscillator1.connect(gainNode);
-                                    oscillator2.connect(gainNode);
-                                    gainNode.connect(window.audioContext.destination);
-                                    
-                                    oscillator1.start(window.audioContext.currentTime);
-                                    oscillator2.start(window.audioContext.currentTime);
-                                    oscillator1.stop(window.audioContext.currentTime + 0.3);
-                                    oscillator2.stop(window.audioContext.currentTime + 0.3);
-                                    
-                                    return true;
-                                } catch (error) {
-                                    console.error('iPhone test tone error:', error);
-                                    return false;
-                                }
-                            })()
-                        ");
-                        
-                        testResults.Add(testToneResult ? "? iPhone test tone played" : "? Test tone failed");
-                        
-                        // Test 4: Volume and device checks
-                        testResults.Add("?? Check: Is volume up? Is silent switch OFF?");
-                        testResults.Add("?? If no sound: Try headphones or restart Safari");
-                        
-                    }
-                    catch (Exception toneEx)
-                    {
-                        testResults.Add($"? Test tone error: {toneEx.Message}");
-                    }
-                }
-                
-                _iPhoneTestResult = string.Join("\n", testResults);
-            }
-            else
-            {
-                _iPhoneTestResult = "? Audio module not loaded";
-            }
-            
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            _iPhoneTestResult = $"? iPhone test failed: {ex.Message}";
-            StateHasChanged();
-        }
-    }
-
-    private byte[] GenerateTestTone(double frequency, double duration, int sampleRate)
-    {
-        int sampleCount = (int)(duration * sampleRate);
-        var samples = new short[sampleCount];
-        
-        for (int i = 0; i < sampleCount; i++)
-        {
-            double time = (double)i / sampleRate;
-            double amplitude = Math.Sin(2 * Math.PI * frequency * time);
-            
-            // Apply envelope to avoid clicks
-            double envelope = 1.0;
-            if (i < sampleRate * 0.05) // 50ms fade in
-                envelope = (double)i / (sampleRate * 0.05);
-            else if (i > sampleCount - sampleRate * 0.05) // 50ms fade out
-                envelope = (double)(sampleCount - i) / (sampleRate * 0.05);
-            
-            samples[i] = (short)(amplitude * envelope * 0.3 * short.MaxValue); // 30% volume
-        }
-        
-        var bytes = new byte[samples.Length * 2];
-        Buffer.BlockCopy(samples, 0, bytes, 0, bytes.Length);
-        return bytes;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_jsModule != null)
-        {
-            await _jsModule.DisposeAsync();
-        }
-    }
-}
