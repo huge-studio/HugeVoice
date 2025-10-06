@@ -49,127 +49,87 @@
                         </div>
                         
                         <div class="col-12 col-md-6">
-                            <h5 class="mb-3">Connection Status</h5>
+                            <h5 class="mb-3">Channel Status</h5>
                             
-                            <!-- iPhone-specific enhanced audio activation -->
-                            @if (!_audioActivated)
+                            <!-- Channel Status Display -->
+                            @if (_hasBroadcaster)
                             {
-                                <div class="text-center mb-3">
-                                    <div class="alert @(_isIPhone ? "alert-warning border-warning" : "alert-info") p-3">
-                                        <div class="d-flex align-items-start">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="@(_isIPhone ? "bi bi-phone text-warning" : "bi bi-volume-mute") me-2 flex-shrink-0" viewBox="0 0 16 16">
-                                                @if (_isIPhone)
-                                                {
-                                                    <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/>
-                                                    <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                                                }
-                                                else
-                                                {
-                                                    <path d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89A.5.5 0 0 1 6.717 3.55zM6 5.04 4.312 6.39A.5.5 0 0 1 4 6.5H2v3h2a.5.5 0 0 1 .312.11L6 10.96V5.04zm7.854.606a.5.5 0 0 1 0 .708L12.207 8l1.647 1.646a.5.5 0 0 1-.708.708L11.5 8.707l-1.646 1.647a.5.5 0 0 1-.708-.708L10.793 8 9.146 6.354a.5.5 0 1 1 .708-.708L11.5 7.293l1.646-1.647a.5.5 0 0 1 .708 0z"/>
-                                                }
-                                            </svg>
-                                            <div>
-                                                <strong>@(_isIPhone ? "?? iPhone Audio Setup Required" : "?? Audio Activation Required")</strong>
-                                                <br/>
-                                                <small>
-                                                    @if (_isIPhone)
-                                                    {
-                                                        <text>iPhones require special audio activation. Please follow these steps:</text>
-                                                        <ol class="small mt-2 mb-0 text-start">
-                                                            <li>Turn up your iPhone volume using the side buttons</li>
-                                                            <li>Make sure Silent Mode is OFF (check the switch above volume buttons)</li>
-                                                            <li>Tap the "?? Enable iPhone Audio" button below</li>
-                                                            <li>If no sound, try using headphones or AirPods</li>
-                                                        </ol>
-                                                    }
-                                                    else if (_userAgent.Contains("Safari") || _userAgent.Contains("iPad"))
-                                                    {
-                                                        <text>Safari/iOS requires user interaction to enable audio playback.</text>
-                                                    }
-                                                    else
-                                                    {
-                                                        <text>Your browser requires user interaction to enable audio playback.</text>
-                                                    }
-                                                </small>
-                                            </div>
+                                <div class="alert alert-success mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-broadcast me-2 flex-shrink-0" viewBox="0 0 16 16">
+                                            <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zM2.343 4.343a5 5 0 0 0 0 7.314.5.5 0 0 1-.707.707 6 6 0 0 1 0-8.485.5.5 0 0 1 .707.707zM1.636 5.636a3 3 0 0 0 0 4.243.5.5 0 0 1-.707.707 4 4 0 0 1 0-5.243.5.5 0 0 1 .707.707zM10.243 8a2 2 0 1 1-3.86.88 2 2 0 0 1 3.86-.88zM13.657 2.343a.5.5 0 0 1 0 .707 7 7 0 0 1 0 9.9.5.5 0 1 1-.707-.707 6 6 0 0 0 0-8.486.5.5 0 0 1 0-.707zm-.707.707a.5.5 0 0 1 0 .707 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.707zm-.707.707a.5.5 0 0 1 0 .707 3 3 0 0 1 0 4.243.5.5 0 1 1-.708-.708 2 2 0 0 0 0-2.828.5.5 0 0 1 0-.707z"/>
+                                        </svg>
+                                        <div>
+                                            <strong>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle me-1" viewBox="0 0 16 16">
+                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                                                </svg>
+                                                Channel is Live!
+                                            </strong><br />
+                                            <small>Someone is broadcasting audio right now</small>
                                         </div>
                                     </div>
-                                    
-                                    <button @onclick="ActivateAudio" class="btn @(_isIPhone ? "btn-warning" : "btn-primary") btn-lg mb-2 w-100" disabled="@_audioActivating">
-                                        @if (_audioActivating)
-                                        {
-                                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                                            <text>Activating Audio...</text>
-                                        }
-                                        else
-                                        {
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-hourglass-split me-2 flex-shrink-0" viewBox="0 0 16 16">
+                                            <path d="M2.5 15a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1h-11zm2-13v1c0 .537.12 1.045.337 1.5h6.326c.216-.455.337-.963.337-1.5V2h-7zm3 6.35c0 .701-.478 1.236-1.011 1.492A3.5 3.5 0 0 0 4.5 13s.866-1.299 3-1.48V8.35zm1 0v3.17c2.134.181 3 1.48 3 1.48a3.5 3.5 0 0 0-1.989-3.158C8.978 9.586 8.5 9.052 8.5 8.35z"/>
+                                        </svg>
+                                        <div>
+                                            <strong>Channel is Quiet</strong><br />
+                                            <small>No one is broadcasting at the moment. You can still listen and wait for someone to start.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            
+                            <!-- Listen Button -->
+                            @if (!_isListening)
+                            {
+                                <button @onclick="StartListening" class="btn btn-success btn-lg mb-3 w-100" disabled="@_isStarting">
+                                    @if (_isStarting)
+                                    {
+                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                        <text>Starting...</text>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-circle me-2" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.055a.5.5 0 0 1 0 .89L6.791 9.907a.5.5 0 0 1-.791-.389V5.482a.5.5 0 0 1 .271-.427z"/>
+                                        </svg>
+                                        <text>Start Listening</text>
+                                    }
+                                </button>
+                            }
+                            else
+                            {
+                                <div class="alert alert-primary mb-3">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-volume-up me-2" viewBox="0 0 16 16">
                                                 <path d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z"/>
                                                 <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.706.706z"/>
                                                 <path d="M10.025 8a4.486 4.486 0 0 1-1.318 3.182L8 10.475A3.489 3.489 0 0 0 9.025 8c0-.966-.392-1.841-1.025-2.475l.707-.707A4.486 4.486 0 0 1 10.025 8zM7 4a.5.5 0 0 0-.812-.39L3.825 5.5H1.5A.5.5 0 0 0 1 6v4a.5.5 0 0 0 .5.5h2.325l2.363 1.89A.5.5 0 0 0 7 12V4zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11z"/>
                                             </svg>
-                                            @if (_isIPhone)
-                                            {
-                                                <text>?? Enable iPhone Audio</text>
-                                            }
-                                            else
-                                            {
-                                                <text>?? Enable Audio Playback</text>
-                                            }
-                                        }
-                                    </button>
-                                </div>
-                            }
-                            else
-                            {
-                                <!-- Audio status indicators when activated -->
-                                @if (_hasBroadcaster && !_waitingForBroadcaster)
-                                {
-                                    <div class="alert alert-success mb-3">
-                                        <div class="d-flex align-items-start">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-volume-up me-2 flex-shrink-0" viewBox="0 0 16 16">
-                                                <path d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z"/>
-                                                <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.706.706z"/>
-                                                <path d="M10.025 8a4.486 4.486 0 0 1-1.318 3.182L8 10.475A3.489 3.489 0 0 0 9.025 8c0-.966-.392-1.841-1.025-2.475l.707-.707A4.486 4.486 0 0 1 10.025 8zM7 4a.5.5 0 0 0-.812-.39L3.825 5.5H1.5A.5.5 0 0 0 1 6v4a.5.5 0 0 0 .5.5h2.325l2.363 1.89A.5.5 0 0 0 7 12V4zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11z"/>
-                                            </svg>
                                             <div>
-                                                <strong>? Live Audio - @(_isIPhone ? "iPhone Ready!" : "Listening...")</strong><br />
-                                                <small>@(_isIPhone ? "Your iPhone is receiving audio" : "Volume up for best experience")</small>
+                                                <strong>Listening...</strong><br />
+                                                <small>@(_hasBroadcaster ? "Receiving live audio" : "Waiting for audio to start")</small>
                                             </div>
                                         </div>
-                                    </div>
-                                }
-                                else if (_waitingForBroadcaster)
-                                {
-                                    <div class="alert alert-warning mb-3">
-                                        <div class="d-flex align-items-start">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock me-2 flex-shrink-0" viewBox="0 0 16 16">
-                                                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                                            </svg>
-                                            <div>
-                                                <strong>? Waiting for broadcaster...</strong><br />
-                                                <small>Channel is open, audio will play when broadcasting starts</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="alert alert-success mb-3">
-                                        <div class="d-flex align-items-center justify-content-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-check-circle me-2" viewBox="0 0 16 16">
+                                        <button @onclick="StopListening" class="btn btn-outline-danger btn-sm">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stop-circle" viewBox="0 0 16 16">
                                                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                                <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                                                <path d="M5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5v-3z"/>
                                             </svg>
-                                            <div>
-                                                <strong>? @(_isIPhone ? "iPhone Audio Ready!" : "Audio Ready!")</strong>
-                                                <br/>
-                                                <small class="d-block">Ready to receive audio when broadcasting starts</small>
-                                            </div>
-                                        </div>
+                                            Stop
+                                        </button>
                                     </div>
-                                }
+                                </div>
                             }
                             
                             <div class="mb-3">
@@ -209,7 +169,7 @@
                             </div>
                         </div>
                         
-                        <h5 class="mb-3">Connecting to broadcast...</h5>
+                        <h5 class="mb-3">Connecting to channel...</h5>
                         <p class="text-muted">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-router me-1" viewBox="0 0 16 16">
                                 <path d="M5.525 3.025a3.5 3.5 0 0 1 4.95 0 .5.5 0 1 0 .707-.707 4.5 4.5 0 0 0-6.364 0 .5.5 0 0 0 .707.707Z"/>
@@ -232,8 +192,8 @@
             <div class="alert alert-danger mt-3">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
                     <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-                </svg>
-                <strong>Error:</strong> @_errorMessage
+            </svg>
+            <strong>Error:</strong> @_errorMessage
             </div>
         }
 
@@ -242,36 +202,10 @@
                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                 <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
             </svg>
-            <strong>@(_isIPhone ? "iPhone Audio Tips" : "Audio Tips"):</strong> 
-            @if (_waitingForBroadcaster)
-            {
-                <text>The channel stays open even when the broadcaster leaves - you can wait for them to return or for someone else to start broadcasting! </text>
-            }
-            else
-            {
-                <text>Share the QR code to invite others! </text>
-            }
-            
-            @if (_isIPhone)
-            {
-                <div class="mt-2">
-                    <strong>iPhone Users - Essential Steps:</strong>
-                    <ul class="small mb-0">
-                        <li><strong>Volume:</strong> Use the side volume buttons to turn up sound</li>
-                        <li><strong>Silent Switch:</strong> Make sure the switch above volume buttons is OFF (no orange visible)</li>
-                        <li><strong>Media Volume:</strong> Swipe down from top-right for Control Center, check media volume</li>
-                        <li><strong>Headphones:</strong> Try plugging in headphones/AirPods if speaker doesn't work</li>
-                        <li><strong>Low Power Mode:</strong> Disable Low Power Mode in Settings > Battery</li>
-                        <li><strong>Safari:</strong> If still no audio, close Safari completely and reopen</li>
-                    </ul>
-                </div>
-            }
-            else if (_userAgent.Contains("Safari") || _userAgent.Contains("iPad"))
-            {
-                <text><strong>Safari/iOS users:</strong> Make sure to tap "Enable Audio Playback" above to hear audio. </text>
-            }
-            
-            <text>For best experience, turn up your volume and use headphones if available.</text>
+            <strong>How it works:</strong> 
+            Share the QR code to invite others to this channel. Click "Start Listening" when you're ready to hear audio. 
+            You can listen even when no one is broadcasting - the channel stays open and you'll hear audio as soon as someone starts broadcasting.
+            For best experience, turn up your volume and use headphones if available.
         </div>
     </div>
 </div>
@@ -283,15 +217,12 @@
     private HubConnection? _hubConnection;
     private bool _isConnected = false;
     private bool _hasBroadcaster = false;
-    private bool _waitingForBroadcaster = false;
+    private bool _isListening = false;
+    private bool _isStarting = false;
     private IJSObjectReference? _jsModule;
     private string _listenerUrl = "";
     private string _qrCodeDataUrl = "";
     private string _errorMessage = "";
-    private bool _audioActivated = false;
-    private bool _audioActivating = false;
-    private string _userAgent = "";
-    private bool _isIPhone = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -309,7 +240,7 @@
             {
                 try
                 {
-                    if (_jsModule != null && audioData != null && audioData.Length > 0)
+                    if (_jsModule != null && audioData != null && audioData.Length > 0 && _isListening)
                     {
                         var base64Audio = Convert.ToBase64String(audioData);
                         await _jsModule.InvokeVoidAsync("playAudio", base64Audio);
@@ -327,7 +258,6 @@
                 if (roomId == RoomId)
                 {
                     _hasBroadcaster = hasBroadcaster;
-                    _waitingForBroadcaster = !hasBroadcaster;
                     InvokeAsync(StateHasChanged);
                 }
             });
@@ -338,7 +268,6 @@
                 if (roomId == RoomId)
                 {
                     _hasBroadcaster = true;
-                    _waitingForBroadcaster = false;
                     InvokeAsync(StateHasChanged);
                 }
             });
@@ -349,28 +278,6 @@
                 if (roomId == RoomId)
                 {
                     _hasBroadcaster = false;
-                    InvokeAsync(StateHasChanged);
-                }
-            });
-
-            // Handle waiting for broadcaster status
-            _hubConnection.On<string>("WaitingForBroadcaster", (roomId) =>
-            {
-                if (roomId == RoomId)
-                {
-                    _waitingForBroadcaster = true;
-                    _hasBroadcaster = false;
-                    InvokeAsync(StateHasChanged);
-                }
-            });
-
-            // Handle broadcaster becoming available
-            _hubConnection.On<string>("BroadcasterAvailable", (roomId) =>
-            {
-                if (roomId == RoomId)
-                {
-                    _hasBroadcaster = true;
-                    _waitingForBroadcaster = false;
                     InvokeAsync(StateHasChanged);
                 }
             });
@@ -395,13 +302,6 @@
             try
             {
                 _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./audio.js");
-                
-                _userAgent = await JS.InvokeAsync<string>("eval", "navigator.userAgent");
-                _isIPhone = _userAgent.Contains("iPhone");
-                
-                Console.WriteLine($"Device detected: iPhone={_isIPhone}, UserAgent={_userAgent}");
-                
-                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -411,45 +311,46 @@
         }
     }
 
-    private async Task ActivateAudio()
+    private async Task StartListening()
     {
         try
         {
-            _audioActivating = true;
+            _isStarting = true;
             StateHasChanged();
             
             if (_jsModule != null)
             {
-                Console.WriteLine($"Activating audio with user interaction for {(_isIPhone ? "iPhone" : "other device")}...");
-                
                 var success = await _jsModule.InvokeAsync<bool>("activateAudioContext");
                 
                 if (success)
                 {
-                    _audioActivated = true;
-                    Console.WriteLine($"Audio activation successful for {(_isIPhone ? "iPhone" : "other device")}");
+                    _isListening = true;
+                    Console.WriteLine("Audio listening started successfully");
                 }
                 else
                 {
-                    _errorMessage = _isIPhone 
-                        ? "Failed to activate iPhone audio. Please check your volume and silent switch, then try again." 
-                        : "Failed to activate audio. Please try again.";
+                    _errorMessage = "Failed to start audio. Please try again.";
                     Console.WriteLine("Audio activation failed");
                 }
             }
         }
         catch (Exception ex)
         {
-            _errorMessage = _isIPhone
-                ? $"iPhone audio activation error: {ex.Message}. Try using headphones or check device settings."
-                : $"Failed to activate audio: {ex.Message}";
+            _errorMessage = $"Failed to start listening: {ex.Message}";
             Console.WriteLine($"Audio activation error: {ex.Message}");
         }
         finally
         {
-            _audioActivating = false;
+            _isStarting = false;
             StateHasChanged();
         }
+    }
+
+    private void StopListening()
+    {
+        _isListening = false;
+        StateHasChanged();
+        Console.WriteLine("Audio listening stopped");
     }
 
     private void GenerateQRCode()
