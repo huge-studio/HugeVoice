@@ -87,7 +87,47 @@
                                 }
                             </small>
                         </div>
-                        
+
+                        <!-- Channel Status Display -->
+                        @if (_hubConnection?.State == HubConnectionState.Connected && !string.IsNullOrEmpty(_channelId))
+                        {
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Channel Status</label>
+                                <div class="card border-0 @(_channelHasBroadcaster && !_isBroadcaster ? "border-warning bg-warning-subtle" : "border-success bg-success-subtle")">
+                                    <div class="card-body py-2 px-3">
+                                        @if (_isBroadcaster)
+                                        {
+                                            <div class="d-flex align-items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-broadcast text-success me-2" viewBox="0 0 16 16">
+                                                    <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM8 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+                                                </svg>
+                                                <small class="text-success fw-bold">● You are the broadcaster</small>
+                                            </div>
+                                        }
+                                        else if (_channelHasBroadcaster)
+                                        {
+                                            <div class="d-flex align-items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle text-warning me-2" viewBox="0 0 16 16">
+                                                    <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                                                </svg>
+                                                <small class="text-warning fw-bold">⚠ Channel occupied by another broadcaster</small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle text-success me-2" viewBox="0 0 16 16">
+                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                                                </svg>
+                                                <small class="text-success fw-bold">✓ Channel available for broadcasting</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
                         <div class="mb-4">
                             <label class="form-label text-muted small">Listener URL</label>
                             <div class="input-group">
@@ -196,8 +236,9 @@
                 <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
             <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
             </svg>
-            <strong>Note:</strong> Your browser will request microphone permission. Please allow access to start broadcasting.
-            Only one broadcaster is allowed per channel at a time.
+            <strong>Important:</strong> Your browser will request microphone permission. Please allow access to start broadcasting.
+            <br />
+            <strong>Single Broadcaster Rule:</strong> Only one broadcaster is allowed per channel at a time. The system will prevent multiple broadcasters and show validation errors if you try to broadcast on an occupied channel.
         </div>
 
         @if (!string.IsNullOrEmpty(_errorMessage))
@@ -250,70 +291,6 @@
         }
     }
 
-    private void GenerateNewChannelId()
-    {
-        _channelId = AnimalNameGenerator.GenerateChannelName();
-        UpdateUrls();
-        
-        // Rejoin room if connected but not recording
-        if (_hubConnection?.State == HubConnectionState.Connected && !_isRecording)
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _hubConnection.InvokeAsync("JoinRoom", _channelId);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error rejoining room with new ID: {ex.Message}");
-                }
-            });
-        }
-    }
-
-    private async Task OnChannelIdChanged(ChangeEventArgs e)
-    {
-        var newChannelId = e.Value?.ToString() ?? "";
-        if (_channelId != newChannelId)
-        {
-            _channelId = newChannelId;
-            UpdateUrls();
-            
-            // Rejoin room if connected but not recording
-            if (_hubConnection?.State == HubConnectionState.Connected && !_isRecording && !string.IsNullOrWhiteSpace(_channelId))
-            {
-                try
-                {
-                    await _hubConnection.InvokeAsync("JoinRoom", _channelId);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error rejoining room with new ID: {ex.Message}");
-                }
-            }
-        }
-    }
-
-    private void UpdateUrls()
-    {
-        _listenerUrl = $"{Navigation.BaseUri}listen/{_channelId}";
-        GenerateQRCode();
-        StateHasChanged();
-    }
-
-    private void GenerateQRCode()
-    {
-        if (!string.IsNullOrEmpty(_listenerUrl))
-        {
-            using var qrGenerator = new QRCodeGenerator();
-            using var qrCodeData = qrGenerator.CreateQrCode(_listenerUrl, QRCodeGenerator.ECCLevel.Q);
-            using var qrCode = new PngByteQRCode(qrCodeData);
-            var qrCodeBytes = qrCode.GetGraphic(20);
-            _qrCodeDataUrl = $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
-        }
-    }
-
     private async Task ConnectToHub()
     {
         try
@@ -327,11 +304,12 @@
 
             // Set up event handlers
             _hubConnection.On<string, bool>("RoomStatus", OnRoomStatusChanged);
-            _hubConnection.On<string, string, bool>("BroadcasterChanged", OnBroadcasterChanged);
+            _hubConnection.On<string, string>("BroadcasterJoined", OnBroadcasterJoined);
+            _hubConnection.On<string, string>("BroadcasterLeft", OnBroadcasterLeft);
             _hubConnection.On<string>("BroadcastError", OnBroadcastError);
 
             await _hubConnection.StartAsync();
-            await _hubConnection.InvokeAsync("JoinRoom", _channelId);
+            await _hubConnection.InvokeAsync("JoinRoom", _channelId, true); // true = joining as potential broadcaster
             
             Console.WriteLine($"Successfully connected to SignalR hub and joined room: {_channelId}");
             StateHasChanged();
@@ -370,26 +348,122 @@
         }
     }
 
+    private void GenerateNewChannelId()
+    {
+        _channelId = AnimalNameGenerator.GenerateChannelName();
+        UpdateUrls();
+        
+        // Rejoin room if connected but not recording
+        if (_hubConnection?.State == HubConnectionState.Connected && !_isRecording)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _hubConnection.InvokeAsync("JoinRoom", _channelId, true); // true = potential broadcaster
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error rejoining room with new ID: {ex.Message}");
+                }
+            });
+        }
+    }
+
+    private async Task OnChannelIdChanged(ChangeEventArgs e)
+    {
+        var newChannelId = e.Value?.ToString() ?? "";
+        if (_channelId != newChannelId)
+        {
+            _channelId = newChannelId;
+            UpdateUrls();
+            
+            // Rejoin room if connected but not recording
+            if (_hubConnection?.State == HubConnectionState.Connected && !_isRecording && !string.IsNullOrWhiteSpace(_channelId))
+            {
+                try
+                {
+                    await _hubConnection.InvokeAsync("JoinRoom", _channelId, true); // true = potential broadcaster
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error rejoining room with new ID: {ex.Message}");
+                }
+            }
+        }
+    }
+
+    private void UpdateUrls()
+    {
+        _listenerUrl = $"{Navigation.BaseUri}listen/{_channelId}";
+        GenerateQRCode();
+        StateHasChanged();
+    }
+
+    private void GenerateQRCode()
+    {
+        if (!string.IsNullOrEmpty(_listenerUrl))
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(_listenerUrl, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            var qrCodeBytes = qrCode.GetGraphic(20);
+            _qrCodeDataUrl = $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
+        }
+    }
+
     private async Task StartRecording()
     {
         try
         {
             _errorMessage = "";
             
-            // Request broadcaster role first
-            if (_hubConnection != null)
+            // Check if we're already a broadcaster
+            if (_isBroadcaster)
             {
-                var canBroadcast = await _hubConnection.InvokeAsync<bool>("RequestBroadcasterRole", _channelId);
-                if (!canBroadcast)
-                {
-                    _errorMessage = "Another broadcaster is already active on this channel. Please try a different channel.";
-                    StateHasChanged();
-                    return;
-                }
+                _errorMessage = "You are already broadcasting on this channel.";
+                StateHasChanged();
+                return;
             }
             
+            if (_hubConnection == null)
+            {
+                _errorMessage = "Not connected to the server. Please try connecting first.";
+                StateHasChanged();
+                return;
+            }
+            
+            // Double-check broadcaster status with server before attempting
+            Console.WriteLine($"Double-checking broadcaster status for channel: {_channelId}");
+            var serverHasBroadcaster = await _hubConnection.InvokeAsync<bool>("CheckBroadcasterStatus", _channelId);
+            Console.WriteLine($"Server broadcaster status check result: {serverHasBroadcaster}");
+            
+            if (serverHasBroadcaster)
+            {
+                _errorMessage = "This channel already has an active broadcaster. Please try a different channel.";
+                _channelHasBroadcaster = true; // Update our local state
+                StateHasChanged();
+                return;
+            }
+            
+            // Request broadcaster role from server (server-side validation)
+            Console.WriteLine($"Requesting broadcaster role for channel: {_channelId}");
+            var canBroadcast = await _hubConnection.InvokeAsync<bool>("RequestBroadcasterRole", _channelId);
+            Console.WriteLine($"Broadcaster role request result: {canBroadcast}");
+            
+            if (!canBroadcast)
+            {
+                _errorMessage = "Another broadcaster became active on this channel just now. Please try a different channel.";
+                _channelHasBroadcaster = true; // Update our local state
+                StateHasChanged();
+                return;
+            }
+            
+            // If we get here, we successfully got broadcaster role
             _isBroadcaster = true;
+            _channelHasBroadcaster = true; // We are now the broadcaster
             _isRecording = true;
+            Console.WriteLine($"Successfully became broadcaster for channel: {_channelId}");
             StateHasChanged(); // Refresh the page UI when broadcasting starts
             
             if (_jsModule != null)
@@ -400,6 +474,7 @@
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error in StartRecording: {ex.Message}");
             _errorMessage = $"Failed to start recording: {ex.Message}";
             _isBroadcaster = false;
             _isRecording = false;
@@ -442,11 +517,20 @@
         }
     }
 
-    private void OnBroadcasterChanged(string roomId, string connectionId, bool isActive)
+    private void OnBroadcasterJoined(string roomId, string connectionId)
     {
         if (roomId == _channelId)
         {
-            _channelHasBroadcaster = isActive;
+            _channelHasBroadcaster = true;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnBroadcasterLeft(string roomId, string connectionId)
+    {
+        if (roomId == _channelId)
+        {
+            _channelHasBroadcaster = false;
             InvokeAsync(StateHasChanged);
         }
     }
