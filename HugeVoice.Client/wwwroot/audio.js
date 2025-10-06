@@ -1,53 +1,68 @@
-// Audio recording and playback functionality for HugeVoice
-// Enhanced with Safari/iOS compatibility and iPhone-specific fixes
+﻿// Audio recording and playback functionality for HugeVoice
+// Comprehensive iOS/Safari compatibility with Audio element fallback
 
 let mediaRecorder = null;
 let audioContext = null;
-let audioWorklet = null;
 let dotNetRef = null;
 let isAudioContextInitialized = false;
 let pendingAudioQueue = [];
 let isProcessingQueue = false;
-let audioContextSampleRate = 44100; // iPhone preferred sample rate
+
+// iOS audio unlocking - multiple strategies
+let audioElement = null;
+let isAudioElementUnlocked = false;
+let isWebAudioUnlocked = false;
 
 // Enhanced browser/device detection
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const isIPhone = /iPhone/.test(navigator.userAgent);
 const isIPad = /iPad/.test(navigator.userAgent);
-const isiOSVersion = isIOS ? parseFloat((navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/) || [0,0,0])[1] + '.' + (navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/) || [0,0,0])[2]) : 0;
 
 console.log('Audio module loading - Device detection:', {
     isSafari,
     isIOS,
     isIPhone,
     isIPad,
-    isiOSVersion,
     userAgent: navigator.userAgent
 });
+
+// Create Audio element for iOS fallback
+function createAudioElement() {
+    if (!audioElement) {
+        audioElement = new Audio();
+        audioElement.preload = 'auto';
+        audioElement.crossOrigin = 'anonymous';
+        
+        // iOS-specific settings
+        if (isIOS) {
+            audioElement.playsInline = true;
+            audioElement.muted = false;
+            audioElement.volume = 1.0;
+        }
+        
+        console.log('Audio element created for iOS fallback');
+    }
+    return audioElement;
+}
 
 export async function startRecording(dotNetReference) {
     dotNetRef = dotNetReference;
     
     try {
+        // Ensure audio is unlocked before recording
+        await ensureAudioUnlocked();
+        
         // iPhone-specific audio constraints
         const audioConstraints = {
             audio: {
                 channelCount: 1,
                 echoCancellation: true,
                 noiseSuppression: true,
-                autoGainControl: true
+                autoGainControl: true,
+                sampleRate: isIPhone ? 44100 : isIOS ? 22050 : 16000
             }
         };
-
-        // iPhone prefers higher sample rates
-        if (isIPhone) {
-            audioConstraints.audio.sampleRate = 44100;
-        } else if (isIOS) {
-            audioConstraints.audio.sampleRate = 22050;
-        } else {
-            audioConstraints.audio.sampleRate = 16000;
-        }
 
         const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
 
@@ -58,91 +73,36 @@ export async function startRecording(dotNetReference) {
 
         const source = audioContext.createMediaStreamSource(stream);
         
-        // iPhone-specific processing
-        if (isIPhone) {
-            // iPhone works best with very small buffer sizes
-            const processor = audioContext.createScriptProcessor(1024, 1, 1);
-            
-            processor.onaudioprocess = async function(event) {
-                if (dotNetRef && audioContext.state === 'running') {
-                    try {
-                        const inputData = event.inputBuffer.getChannelData(0);
-                        const samples = new Int16Array(inputData.length);
-                        
-                        // iPhone-optimized conversion
-                        for (let i = 0; i < inputData.length; i++) {
-                            const sample = Math.max(-1, Math.min(1, inputData[i]));
-                            samples[i] = Math.round(sample < 0 ? sample * 0x8000 : sample * 0x7FFF);
-                        }
-                        
-                        const bytes = new Uint8Array(samples.buffer);
-                        const base64String = btoa(String.fromCharCode.apply(null, bytes));
-                        
-                        await dotNetRef.invokeMethodAsync('SendAudioData', base64String);
-                    } catch (error) {
-                        console.error('Error processing audio data on iPhone:', error);
-                    }
-                }
-            };
-
-            source.connect(processor);
-            processor.connect(audioContext.destination);
-        } else if (isIOS) {
-            // iPad and other iOS devices
-            const processor = audioContext.createScriptProcessor(2048, 1, 1);
-            
-            processor.onaudioprocess = async function(event) {
-                if (dotNetRef && audioContext.state === 'running') {
-                    try {
-                        const inputData = event.inputBuffer.getChannelData(0);
-                        const samples = new Int16Array(inputData.length);
-                        
-                        for (let i = 0; i < inputData.length; i++) {
-                            const sample = Math.max(-1, Math.min(1, inputData[i]));
-                            samples[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
-                        }
-                        
-                        const bytes = new Uint8Array(samples.buffer);
-                        const base64String = btoa(String.fromCharCode.apply(null, bytes));
-                        
-                        await dotNetRef.invokeMethodAsync('SendAudioData', base64String);
-                    } catch (error) {
-                        console.error('Error processing audio data on iOS:', error);
-                    }
-                }
-            };
-
-            source.connect(processor);
-            processor.connect(audioContext.destination);
-        } else {
-            // Standard approach for Chrome/Firefox
-            const processor = audioContext.createScriptProcessor(4096, 1, 1);
-            
-            processor.onaudioprocess = async function(event) {
-                if (dotNetRef) {
-                    try {
-                        const inputData = event.inputBuffer.getChannelData(0);
-                        const samples = new Int16Array(inputData.length);
-                        
-                        for (let i = 0; i < inputData.length; i++) {
-                            samples[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
-                        }
-                        
-                        const bytes = new Uint8Array(samples.buffer);
-                        const base64String = btoa(String.fromCharCode.apply(null, bytes));
-                        
-                        await dotNetRef.invokeMethodAsync('SendAudioData', base64String);
-                    } catch (error) {
-                        console.error('Error processing audio data:', error);
-                    }
-                }
-            };
-
-            source.connect(processor);
-            processor.connect(audioContext.destination);
-        }
+        // Use smaller buffer sizes for iOS
+        const bufferSize = isIPhone ? 1024 : isIOS ? 2048 : 4096;
+        const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
         
-        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : isSafari ? 'Safari' : 'Other');
+        processor.onaudioprocess = async function(event) {
+            if (dotNetRef && audioContext.state === 'running') {
+                try {
+                    const inputData = event.inputBuffer.getChannelData(0);
+                    const samples = new Int16Array(inputData.length);
+                    
+                    // Convert to 16-bit PCM
+                    for (let i = 0; i < inputData.length; i++) {
+                        const sample = Math.max(-1, Math.min(1, inputData[i]));
+                        samples[i] = Math.round(sample < 0 ? sample * 0x8000 : sample * 0x7FFF);
+                    }
+                    
+                    const bytes = new Uint8Array(samples.buffer);
+                    const base64String = btoa(String.fromCharCode.apply(null, bytes));
+                    
+                    await dotNetRef.invokeMethodAsync('SendAudioData', base64String);
+                } catch (error) {
+                    console.error('Error processing audio data:', error);
+                }
+            }
+        };
+
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+        
+        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other');
         
     } catch (error) {
         console.error('Error starting recording:', error);
@@ -161,23 +121,16 @@ export function stopRecording() {
 
 async function initializeAudioContext() {
     try {
-        // Detect the best sample rate for the device
-        if (isIPhone) {
-            audioContextSampleRate = 44100; // iPhone's native rate
-        } else if (isIOS) {
-            audioContextSampleRate = 22050; // Good balance for iPad
-        } else {
-            audioContextSampleRate = 16000; // Standard for web
-        }
-
+        // Use optimal sample rate for each device
+        const sampleRate = isIPhone ? 44100 : isIOS ? 22050 : 16000;
+        
         const contextOptions = {
-            sampleRate: audioContextSampleRate,
+            sampleRate: sampleRate,
             latencyHint: 'interactive'
         };
 
-        // iPhone/iOS specific context creation
+        // Always prefer webkitAudioContext on iOS
         if (isIOS) {
-            // Always use webkitAudioContext on iOS for maximum compatibility
             audioContext = new (window.webkitAudioContext || window.AudioContext)(contextOptions);
             console.log('Created webkitAudioContext for iOS');
         } else {
@@ -185,19 +138,6 @@ async function initializeAudioContext() {
         }
 
         console.log('Audio context created with sample rate:', audioContext.sampleRate);
-
-        // Always start in suspended state due to autoplay policies
-        if (audioContext.state === 'suspended') {
-            await audioContext.resume();
-        }
-
-        isAudioContextInitialized = true;
-        console.log('Audio context initialized:', audioContext.state, 'Sample Rate:', audioContext.sampleRate);
-        
-        // Process any queued audio
-        if (pendingAudioQueue.length > 0) {
-            processAudioQueue();
-        }
         
         return true;
     } catch (error) {
@@ -206,217 +146,326 @@ async function initializeAudioContext() {
     }
 }
 
+// CRITICAL: This function must be called directly from a user gesture
 export async function activateAudioContext() {
     try {
-        console.log('Activating audio context with user interaction...');
+        console.log('🔊 Activating audio with user interaction...');
         
-        // Initialize if not already done
+        // Step 1: Initialize audio context if needed
         if (!audioContext) {
             await initializeAudioContext();
         }
         
-        // Resume audio context if it's suspended (required by browser autoplay policies)
+        // Step 2: Resume audio context (MUST be in user gesture)
         if (audioContext.state === 'suspended') {
-            console.log('Resuming suspended audio context...');
+            console.log('📱 Resuming suspended audio context...');
             await audioContext.resume();
-            console.log('Audio context resumed from suspended state:', audioContext.state);
+            console.log('✅ Audio context resumed:', audioContext.state);
         }
         
-        // For iPhone, we need multiple unlock attempts
-        if (isIPhone && audioContext.state === 'running') {
-            await unlockAudioContextForIPhone();
-        } else if (isIOS && audioContext.state === 'running') {
-            await unlockAudioContextForSafari();
-        }
+        // Step 3: Unlock Web Audio API (MUST be in user gesture)
+        await unlockWebAudio();
+        
+        // Step 4: Unlock Audio element (MUST be in user gesture)  
+        await unlockAudioElement();
         
         isAudioContextInitialized = true;
-        console.log('Audio context activated:', audioContext.state, 'Sample Rate:', audioContext.sampleRate);
+        console.log('🎉 Audio fully activated! WebAudio:', isWebAudioUnlocked, 'AudioElement:', isAudioElementUnlocked);
         
-        // Process any queued audio after activation
+        // Process any queued audio
         if (pendingAudioQueue.length > 0) {
-            console.log('Processing queued audio after activation...');
+            console.log('🎵 Processing', pendingAudioQueue.length, 'queued audio buffers...');
             processAudioQueue();
         }
         
         return true;
     } catch (error) {
-        console.error('Error activating audio context:', error);
+        console.error('❌ Error activating audio context:', error);
         return false;
     }
 }
 
-async function unlockAudioContextForIPhone() {
+// CRITICAL: Must be called directly in user gesture - no async/await delays
+async function unlockWebAudio() {
+    if (isWebAudioUnlocked || !audioContext) return;
+    
     try {
-        console.log('Unlocking iPhone audio context...');
+        console.log('🔓 Unlocking Web Audio API...');
         
-        // iPhone needs multiple unlock attempts with different techniques
-        
-        // Technique 1: Play multiple silent buffers
-        for (let i = 0; i < 3; i++) {
+        // Create multiple silent buffers to ensure unlock
+        for (let i = 0; i < 5; i++) {
             const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
             const source = audioContext.createBufferSource();
             source.buffer = buffer;
             
-            // Add gain node for iPhone
+            // Use very quiet but not completely silent audio
             const gainNode = audioContext.createGain();
-            gainNode.gain.setValueAtTime(0.001, audioContext.currentTime); // Very quiet but not silent
+            gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
             
             source.connect(gainNode);
             gainNode.connect(audioContext.destination);
-            source.start(0);
+            source.start(audioContext.currentTime);
             
-            // Small delay between attempts
-            await new Promise(resolve => setTimeout(resolve, 10));
+            // No delays - iOS requires immediate execution
         }
         
-        // Technique 2: Create oscillator briefly (iPhone-specific)
+        // Additional unlock attempt with oscillator
         const oscillator = audioContext.createOscillator();
-        const gainNode2 = audioContext.createGain();
-        gainNode2.gain.setValueAtTime(0.001, audioContext.currentTime);
+        const gainNode = audioContext.createGain();
+        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
         oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-        oscillator.connect(gainNode2);
-        gainNode2.connect(audioContext.destination);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.01);
         
-        console.log('iPhone audio context unlocked successfully');
-        return true;
+        isWebAudioUnlocked = true;
+        console.log('✅ Web Audio API unlocked');
+        
     } catch (error) {
-        console.error('Error unlocking iPhone audio context:', error);
-        return false;
+        console.error('❌ Error unlocking Web Audio API:', error);
     }
 }
 
-async function unlockAudioContextForSafari() {
+// CRITICAL: Must be called directly in user gesture
+async function unlockAudioElement() {
+    if (isAudioElementUnlocked) return;
+    
     try {
-        // Create a silent buffer and play it to unlock audio on Safari/iOS
-        const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
-        const source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioContext.destination);
-        source.start(0);
+        console.log('🔓 Unlocking Audio element...');
         
-        console.log('Safari/iOS audio context unlocked');
-        return true;
+        // Create audio element if not exists
+        createAudioElement();
+        
+        // Create a tiny silent audio file as blob
+        const audioBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+        
+        // Convert to WAV blob for Audio element
+        const wav = audioBufferToWav(audioBuffer);
+        const blob = new Blob([wav], { type: 'audio/wav' });
+        const url = URL.createObjectURL(blob);
+        
+        // Play through Audio element to unlock it
+        audioElement.src = url;
+        
+        // CRITICAL: play() must be called directly in user gesture
+        const playPromise = audioElement.play();
+        
+        if (playPromise !== undefined) {
+            try {
+                await playPromise;
+                audioElement.pause();
+                audioElement.currentTime = 0;
+                console.log('✅ Audio element unlocked via play()');
+            } catch (playError) {
+                console.log('⚠️ Audio element play failed:', playError.name);
+            }
+        }
+        
+        // Clean up blob URL
+        URL.revokeObjectURL(url);
+        
+        isAudioElementUnlocked = true;
+        
     } catch (error) {
-        console.error('Error unlocking Safari audio context:', error);
+        console.error('❌ Error unlocking Audio element:', error);
+    }
+}
+
+// Ensure both Web Audio and Audio element are unlocked
+async function ensureAudioUnlocked() {
+    if (!isWebAudioUnlocked || !isAudioElementUnlocked) {
+        console.log('⚠️ Audio not fully unlocked, waiting for user interaction...');
         return false;
     }
+    return true;
 }
 
 export async function playAudio(audioData) {
     try {
-        // If audio context isn't ready, queue the audio for later
-        if (!audioContext || audioContext.state !== 'running') {
-            console.log('Audio context not ready, queuing audio data. State:', audioContext?.state);
+        // If not fully unlocked, queue the audio
+        if (!isAudioContextInitialized || !audioContext || audioContext.state !== 'running') {
+            console.log('🔄 Audio not ready, queuing audio data. Context state:', audioContext?.state);
             pendingAudioQueue.push(audioData);
-            
-            // Try to initialize if not already done
-            if (!isAudioContextInitialized) {
-                console.log('Audio context not initialized, waiting for user interaction');
-                return;
-            }
             return;
         }
 
-        await playAudioBuffer(audioData);
+        // Try Web Audio API first, fallback to Audio element
+        if (isWebAudioUnlocked) {
+            await playAudioWithWebAudio(audioData);
+        } else if (isAudioElementUnlocked) {
+            await playAudioWithAudioElement(audioData);
+        } else {
+            // Queue for later when unlocked
+            pendingAudioQueue.push(audioData);
+        }
         
     } catch (error) {
-        console.error('Error playing audio:', error);
-        // Queue the audio if it failed to play
-        pendingAudioQueue.push(audioData);
+        console.error('❌ Error playing audio:', error);
+        // Try fallback method
+        if (isAudioElementUnlocked) {
+            try {
+                await playAudioWithAudioElement(audioData);
+            } catch (fallbackError) {
+                console.error('❌ Fallback audio playback failed:', fallbackError);
+                pendingAudioQueue.push(audioData);
+            }
+        } else {
+            pendingAudioQueue.push(audioData);
+        }
     }
 }
 
-async function playAudioBuffer(audioData) {
+async function playAudioWithWebAudio(audioData) {
     try {
-        // Convert base64 string back to byte array
-        let bytes;
-        if (typeof audioData === 'string') {
-            const binaryString = atob(audioData);
-            bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-        } else {
-            bytes = new Uint8Array(audioData);
+        // Convert base64 to byte array
+        const binaryString = atob(audioData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
         }
 
         const samples = new Int16Array(bytes.buffer);
         
-        // iPhone needs special handling for sample rate conversion
-        let floatSamples;
-        let targetSampleRate = audioContext.sampleRate;
-        
-        if (isIPhone && audioContext.sampleRate !== 16000) {
-            // Resample from 16kHz to iPhone's sample rate
-            floatSamples = resampleAudioForIPhone(samples, 16000, targetSampleRate);
-        } else {
-            // Standard conversion
-            floatSamples = new Float32Array(samples.length);
-            for (let i = 0; i < samples.length; i++) {
-                floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
-            }
+        // Convert to float samples - let browser handle resampling
+        const floatSamples = new Float32Array(samples.length);
+        for (let i = 0; i < samples.length; i++) {
+            floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
         }
 
-        // Create and play audio buffer
-        const audioBuffer = audioContext.createBuffer(1, floatSamples.length, targetSampleRate);
+        // Create audio buffer - use 16kHz as source rate
+        const audioBuffer = audioContext.createBuffer(1, floatSamples.length, 16000);
         audioBuffer.getChannelData(0).set(floatSamples);
 
+        // Create buffer source
         const source = audioContext.createBufferSource();
         source.buffer = audioBuffer;
         
-        // iPhone-specific audio routing
+        // Apply gain
         const gainNode = audioContext.createGain();
-        if (isIPhone) {
-            // iPhone needs slightly higher gain
-            gainNode.gain.setValueAtTime(1.2, audioContext.currentTime);
-        } else {
-            gainNode.gain.setValueAtTime(1.0, audioContext.currentTime);
-        }
+        gainNode.gain.setValueAtTime(isIPhone ? 1.2 : 1.0, audioContext.currentTime);
         
         source.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
         source.start(0);
         
-        console.log('Audio buffer played - Length:', floatSamples.length, 'Sample Rate:', targetSampleRate);
+        console.log('🎵 Web Audio playback - Length:', floatSamples.length);
         
     } catch (error) {
-        console.error('Error in playAudioBuffer:', error);
+        console.error('❌ Web Audio playback error:', error);
         throw error;
     }
 }
 
-function resampleAudioForIPhone(samples, fromSampleRate, toSampleRate) {
-    if (fromSampleRate === toSampleRate) {
-        // No resampling needed
+async function playAudioWithAudioElement(audioData) {
+    try {
+        if (!audioElement) {
+            createAudioElement();
+        }
+
+        // Convert base64 to byte array
+        const binaryString = atob(audioData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        const samples = new Int16Array(bytes.buffer);
+        
+        // Convert to float samples
         const floatSamples = new Float32Array(samples.length);
         for (let i = 0; i < samples.length; i++) {
             floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
         }
-        return floatSamples;
+
+        // Create audio buffer for WAV conversion
+        const tempContext = audioContext || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        const audioBuffer = tempContext.createBuffer(1, floatSamples.length, 16000);
+        audioBuffer.getChannelData(0).set(floatSamples);
+        
+        // Convert to WAV blob
+        const wav = audioBufferToWav(audioBuffer);
+        const blob = new Blob([wav], { type: 'audio/wav' });
+        const url = URL.createObjectURL(blob);
+        
+        // Play through Audio element
+        audioElement.src = url;
+        
+        return new Promise((resolve, reject) => {
+            const cleanup = () => {
+                URL.revokeObjectURL(url);
+                audioElement.removeEventListener('ended', onEnded);
+                audioElement.removeEventListener('error', onError);
+            };
+            
+            const onEnded = () => {
+                cleanup();
+                resolve();
+            };
+            
+            const onError = (error) => {
+                cleanup();
+                reject(error);
+            };
+            
+            audioElement.addEventListener('ended', onEnded);
+            audioElement.addEventListener('error', onError);
+            
+            const playPromise = audioElement.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(reject);
+            }
+        });
+        
+        console.log('🎵 Audio element playback - Length:', floatSamples.length);
+        
+    } catch (error) {
+        console.error('❌ Audio element playback error:', error);
+        throw error;
+    }
+}
+
+// Convert AudioBuffer to WAV format
+function audioBufferToWav(buffer) {
+    const length = buffer.length;
+    const numberOfChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
+    const view = new DataView(arrayBuffer);
+    
+    // WAV header
+    const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numberOfChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+    view.setUint16(32, numberOfChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, length * numberOfChannels * 2, true);
+    
+    // Convert float samples to 16-bit PCM
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+        for (let channel = 0; channel < numberOfChannels; channel++) {
+            const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+            offset += 2;
+        }
     }
     
-    const ratio = toSampleRate / fromSampleRate;
-    const outputLength = Math.floor(samples.length * ratio);
-    const output = new Float32Array(outputLength);
-    
-    for (let i = 0; i < outputLength; i++) {
-        const srcIndex = i / ratio;
-        const srcIndexFloor = Math.floor(srcIndex);
-        const srcIndexCeil = Math.min(srcIndexFloor + 1, samples.length - 1);
-        const t = srcIndex - srcIndexFloor;
-        
-        // Linear interpolation
-        const sample1 = samples[srcIndexFloor] / (samples[srcIndexFloor] < 0 ? 0x8000 : 0x7FFF);
-        const sample2 = samples[srcIndexCeil] / (samples[srcIndexCeil] < 0 ? 0x8000 : 0x7FFF);
-        
-        output[i] = sample1 * (1 - t) + sample2 * t;
-    }
-    
-    console.log('Resampled audio from', fromSampleRate, 'to', toSampleRate, 'samples:', samples.length, '->', outputLength);
-    return output;
+    return arrayBuffer;
 }
 
 async function processAudioQueue() {
@@ -425,66 +474,78 @@ async function processAudioQueue() {
     }
 
     isProcessingQueue = true;
-    console.log(`Processing ${pendingAudioQueue.length} queued audio buffers for`, isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'other');
+    console.log(`🔄 Processing ${pendingAudioQueue.length} queued audio buffers...`);
 
     while (pendingAudioQueue.length > 0) {
         const audioData = pendingAudioQueue.shift();
         try {
-            await playAudioBuffer(audioData);
-            
-            // iPhone needs longer delays between buffers
-            if (isIPhone) {
-                await new Promise(resolve => setTimeout(resolve, 20));
-            } else if (isIOS) {
-                await new Promise(resolve => setTimeout(resolve, 10));
+            if (isWebAudioUnlocked) {
+                await playAudioWithWebAudio(audioData);
+            } else if (isAudioElementUnlocked) {
+                await playAudioWithAudioElement(audioData);
             }
+            
+            // Small delay to prevent overwhelming the audio system
+            await new Promise(resolve => setTimeout(resolve, isIPhone ? 20 : 10));
         } catch (error) {
-            console.error('Error processing queued audio:', error);
+            console.error('❌ Error processing queued audio:', error);
         }
     }
 
     isProcessingQueue = false;
-    console.log('Finished processing audio queue');
+    console.log('✅ Finished processing audio queue');
 }
 
-// Enhanced auto-unlock for iPhone
+// Enhanced user interaction handling for iOS
 if (typeof window !== 'undefined') {
-    // Wait for page load to initialize
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('Audio module loaded for', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'other', '- waiting for user interaction');
-        });
-    } else {
-        console.log('Audio module loaded for', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'other', '- waiting for user interaction');
-    }
+    console.log('🎧 Audio module loaded for', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other');
     
-    // Add event listeners for user interaction to unlock audio
+    // CRITICAL: These event listeners unlock audio on EVERY interaction
     const unlockEvents = ['touchstart', 'touchend', 'mousedown', 'keydown', 'click'];
+    
     const unlockAudio = async (event) => {
-        if (!isAudioContextInitialized) {
-            console.log('User interaction detected (' + event.type + '), attempting to unlock audio');
-            const success = await activateAudioContext();
-            console.log('Audio unlock result:', success);
+        // Always try to unlock on iOS, even if previously unlocked
+        if (isIOS || !isAudioContextInitialized) {
+            console.log('👆 User gesture detected (' + event.type + '), unlocking audio...');
             
-            // Remove listeners after first successful interaction
-            if (success) {
-                unlockEvents.forEach(eventType => {
-                    document.removeEventListener(eventType, unlockAudio, true);
-                });
+            try {
+                // CRITICAL: Call activateAudioContext directly in the event handler
+                const success = await activateAudioContext();
+                console.log('🔊 Audio unlock result:', success ? '✅ Success' : '❌ Failed');
+                
+                // On non-iOS, remove listeners after first success
+                if (success && !isIOS) {
+                    unlockEvents.forEach(eventType => {
+                        document.removeEventListener(eventType, unlockAudio, true);
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Error in unlock handler:', error);
             }
         }
     };
     
+    // Add listeners with capture=true for maximum compatibility
     unlockEvents.forEach(event => {
         document.addEventListener(event, unlockAudio, true);
     });
     
-    // iPhone-specific: Also try to unlock on page visibility change
-    if (isIPhone) {
+    // iOS-specific: Additional unlock attempts
+    if (isIOS) {
+        // Try to unlock when page becomes visible
         document.addEventListener('visibilitychange', async () => {
-            if (!document.hidden && !isAudioContextInitialized) {
-                console.log('iPhone page became visible, attempting audio unlock');
-                await activateAudioContext();
+            if (!document.hidden) {
+                console.log('📱 Page became visible, checking audio unlock...');
+                if (!isAudioContextInitialized) {
+                    console.log('⚠️ Audio not unlocked, waiting for user gesture...');
+                }
+            }
+        });
+        
+        // Try to unlock on focus
+        window.addEventListener('focus', async () => {
+            if (!isAudioContextInitialized) {
+                console.log('🔍 Window focused, audio needs user gesture...');
             }
         });
     }
