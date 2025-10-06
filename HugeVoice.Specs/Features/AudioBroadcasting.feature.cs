@@ -31,7 +31,7 @@ namespace HugeVoice.Specs.Features
         
         private Xunit.Abstractions.ITestOutputHelper _testOutputHelper;
         
-#line 1 "Calculator.feature"
+#line 1 "AudioBroadcasting.feature"
 #line hidden
         
         public AudioBroadcastingFeature(AudioBroadcastingFeature.FixtureData fixtureData, Xunit.Abstractions.ITestOutputHelper testOutputHelper)
@@ -149,25 +149,30 @@ await this.FeatureBackgroundAsync();
     await testRunner.AndAsync("I should see \"Channel Available: Ready to broadcast\" message", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 19
+    await testRunner.AndAsync("I should see \"? Channel available for broadcasting\" status", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 20
     await testRunner.AndAsync("I should be able to start broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Prevent multiple broadcasters on the same channel")]
+        [Xunit.SkippableFactAttribute(DisplayName="Prevent multiple broadcasters with enhanced validation")]
         [Xunit.TraitAttribute("FeatureTitle", "Audio Broadcasting")]
-        [Xunit.TraitAttribute("Description", "Prevent multiple broadcasters on the same channel")]
+        [Xunit.TraitAttribute("Description", "Prevent multiple broadcasters with enhanced validation")]
         [Xunit.TraitAttribute("Category", "broadcasting")]
         [Xunit.TraitAttribute("Category", "single-broadcaster")]
-        public async System.Threading.Tasks.Task PreventMultipleBroadcastersOnTheSameChannel()
+        [Xunit.TraitAttribute("Category", "multi-layer-validation")]
+        public async System.Threading.Tasks.Task PreventMultipleBroadcastersWithEnhancedValidation()
         {
             string[] tagsOfScenario = new string[] {
                     "broadcasting",
-                    "single-broadcaster"};
+                    "single-broadcaster",
+                    "multi-layer-validation"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Prevent multiple broadcasters on the same channel", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 22
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Prevent multiple broadcasters with enhanced validation", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 23
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -180,24 +185,311 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 23
+#line 24
     await testRunner.GivenAsync("user \"Alice\" is already broadcasting on channel \"Happy-Panda\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 24
-    await testRunner.WhenAsync("user \"Bob\" tries to connect to channel \"Happy-Panda\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
 #line 25
-    await testRunner.AndAsync("user \"Bob\" requests broadcaster role for \"Happy-Panda\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.WhenAsync("user \"Bob\" connects to channel \"Happy-Panda\" as potential broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 26
-    await testRunner.ThenAsync("user \"Bob\" should be denied broadcaster role", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.ThenAsync("user \"Bob\" should see \"? Channel occupied by another broadcaster\" status", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 27
-    await testRunner.AndAsync("user \"Bob\" should see \"Channel Occupied: Another broadcaster is already active\" m" +
-                        "essage", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("user \"Bob\" should see \"Channel Occupied: Another broadcaster is already active\" w" +
+                        "arning", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 28
+    await testRunner.WhenAsync("user \"Bob\" attempts to start broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 29
+    await testRunner.ThenAsync("the system should perform client-side validation first", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 30
+    await testRunner.AndAsync("the system should perform server-side double-check validation", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 31
+    await testRunner.AndAsync("user \"Bob\" should be denied with message \"This channel already has an active broa" +
+                        "dcaster\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 32
     await testRunner.AndAsync("user \"Bob\" should not be able to start broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 33
+    await testRunner.AndAsync("the system should log the validation failure for debugging", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Multi-layer broadcaster validation process")]
+        [Xunit.TraitAttribute("FeatureTitle", "Audio Broadcasting")]
+        [Xunit.TraitAttribute("Description", "Multi-layer broadcaster validation process")]
+        [Xunit.TraitAttribute("Category", "broadcasting")]
+        [Xunit.TraitAttribute("Category", "validation-layers")]
+        public async System.Threading.Tasks.Task Multi_LayerBroadcasterValidationProcess()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "broadcasting",
+                    "validation-layers"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Multi-layer broadcaster validation process", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 36
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 37
+    await testRunner.GivenAsync("I am on the broadcast page", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 38
+    await testRunner.AndAsync("I am connected to channel \"Validation-Test\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 39
+    await testRunner.WhenAsync("another user starts broadcasting on \"Validation-Test\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 40
+    await testRunner.ThenAsync("I should receive \"BroadcasterJoined\" notification", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 41
+    await testRunner.AndAsync("my UI should update to show \"? Channel occupied by another broadcaster\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 42
+    await testRunner.WhenAsync("I attempt to start broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 43
+    await testRunner.ThenAsync("the system should check if I am already a broadcaster (layer 1)", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 44
+    await testRunner.AndAsync("the system should check client-side broadcaster status (layer 2)", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 45
+    await testRunner.AndAsync("the system should double-check with server using \"CheckBroadcasterStatus\" (layer " +
+                        "3)", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 46
+    await testRunner.AndAsync("the system should request broadcaster role from server (layer 4)", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 47
+    await testRunner.AndAsync("I should be denied at layer 3 with appropriate error message", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 48
+    await testRunner.AndAsync("I should see \"This channel already has an active broadcaster. Please try a differ" +
+                        "ent channel.\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Handle concurrent broadcaster attempts safely")]
+        [Xunit.TraitAttribute("FeatureTitle", "Audio Broadcasting")]
+        [Xunit.TraitAttribute("Description", "Handle concurrent broadcaster attempts safely")]
+        [Xunit.TraitAttribute("Category", "broadcasting")]
+        [Xunit.TraitAttribute("Category", "race-condition-prevention")]
+        public async System.Threading.Tasks.Task HandleConcurrentBroadcasterAttemptsSafely()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "broadcasting",
+                    "race-condition-prevention"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Handle concurrent broadcaster attempts safely", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 51
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 52
+    await testRunner.GivenAsync("channel \"Race-Test\" has no active broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 53
+    await testRunner.WhenAsync("user \"Alice\" and user \"Bob\" attempt to start broadcasting simultaneously", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 54
+    await testRunner.ThenAsync("only one user should be granted broadcaster role", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 55
+    await testRunner.AndAsync("the other user should receive \"Another broadcaster became active on this channel " +
+                        "just now\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 56
+    await testRunner.AndAsync("the server should maintain consistent state", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 57
+    await testRunner.AndAsync("all validation layers should work correctly under race conditions", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Real-time channel status display")]
+        [Xunit.TraitAttribute("FeatureTitle", "Audio Broadcasting")]
+        [Xunit.TraitAttribute("Description", "Real-time channel status display")]
+        [Xunit.TraitAttribute("Category", "broadcasting")]
+        [Xunit.TraitAttribute("Category", "channel-status-display")]
+        public async System.Threading.Tasks.Task Real_TimeChannelStatusDisplay()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "broadcasting",
+                    "channel-status-display"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Real-time channel status display", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 60
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 61
+    await testRunner.GivenAsync("I am connected to channel \"Status-Display\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 62
+    await testRunner.WhenAsync("the channel has no broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 63
+    await testRunner.ThenAsync("I should see \"? Channel available for broadcasting\" with green styling", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 64
+    await testRunner.WhenAsync("another user becomes the broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 65
+    await testRunner.ThenAsync("I should see \"? Channel occupied by another broadcaster\" with warning styling", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 66
+    await testRunner.AndAsync("the status should update in real-time via SignalR notifications", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 67
+    await testRunner.WhenAsync("I become the broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 68
+    await testRunner.ThenAsync("I should see \"? You are the broadcaster\" with success styling", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Comprehensive error handling during validation")]
+        [Xunit.TraitAttribute("FeatureTitle", "Audio Broadcasting")]
+        [Xunit.TraitAttribute("Description", "Comprehensive error handling during validation")]
+        [Xunit.TraitAttribute("Category", "broadcasting")]
+        [Xunit.TraitAttribute("Category", "error-handling-validation")]
+        public async System.Threading.Tasks.Task ComprehensiveErrorHandlingDuringValidation()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "broadcasting",
+                    "error-handling-validation"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Comprehensive error handling during validation", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 71
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 72
+    await testRunner.GivenAsync("I am attempting to broadcast on channel \"Error-Test\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 73
+    await testRunner.WhenAsync("the SignalR connection is lost during validation", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 74
+    await testRunner.ThenAsync("I should see \"Not connected to the server. Please try connecting first.\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 75
+    await testRunner.WhenAsync("I am already broadcasting on another channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 76
+    await testRunner.ThenAsync("I should see \"You are already broadcasting on this channel.\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 77
+    await testRunner.WhenAsync("the server validation fails unexpectedly", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 78
+    await testRunner.ThenAsync("I should see appropriate error message with debugging information", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 79
+    await testRunner.AndAsync("the system should gracefully reset the broadcaster state", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Debug information for troubleshooting")]
+        [Xunit.TraitAttribute("FeatureTitle", "Audio Broadcasting")]
+        [Xunit.TraitAttribute("Description", "Debug information for troubleshooting")]
+        [Xunit.TraitAttribute("Category", "broadcasting")]
+        [Xunit.TraitAttribute("Category", "debug-information")]
+        public async System.Threading.Tasks.Task DebugInformationForTroubleshooting()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "broadcasting",
+                    "debug-information"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Debug information for troubleshooting", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 82
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 83
+    await testRunner.GivenAsync("I am connected as an administrator or developer", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 84
+    await testRunner.WhenAsync("I request debug information from the server", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 85
+    await testRunner.ThenAsync("I should receive current broadcaster state information", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 86
+    await testRunner.AndAsync("I should see total active broadcasters count", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 87
+    await testRunner.AndAsync("I should see active broadcasters per channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 88
+    await testRunner.AndAsync("I should see room listener counts", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 89
+    await testRunner.AndAsync("I should see my requesting connection ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 90
+    await testRunner.AndAsync("the information should be logged on the server for debugging", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -215,7 +507,7 @@ await this.FeatureBackgroundAsync();
                     "channel-management"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Generate and use custom channel names", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 31
+#line 93
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -228,23 +520,26 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 32
+#line 94
     await testRunner.GivenAsync("I am on the broadcast page", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 33
+#line 95
     await testRunner.WhenAsync("I generate a new channel ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 34
+#line 96
     await testRunner.ThenAsync("I should see a fun animal-based channel name like \"Brave-Bear\" or \"Silly-Monkey\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 35
+#line 97
     await testRunner.WhenAsync("I enter a custom channel ID \"MyCustomChannel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 36
+#line 98
     await testRunner.ThenAsync("the channel ID should be updated to \"MyCustomChannel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 37
+#line 99
     await testRunner.AndAsync("the QR code should be updated with the new channel URL", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 100
+    await testRunner.AndAsync("the channel status should be checked for the new channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -262,7 +557,7 @@ await this.FeatureBackgroundAsync();
                     "connectivity"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Handle SignalR connection states", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 40
+#line 103
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -275,29 +570,32 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 41
+#line 104
     await testRunner.GivenAsync("I am on the broadcast page", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 42
+#line 105
     await testRunner.WhenAsync("the SignalR hub is not connected", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 43
+#line 106
     await testRunner.ThenAsync("I should see \"Connection Status: Not Connected\" warning", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 44
+#line 107
     await testRunner.AndAsync("I should see a \"Create Channel\" button", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 45
+#line 108
     await testRunner.WhenAsync("I click \"Create Channel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 46
+#line 109
     await testRunner.ThenAsync("the system should connect to the SignalR hub", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 47
+#line 110
     await testRunner.AndAsync("I should join the specified room as a potential broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 48
+#line 111
     await testRunner.AndAsync("the connection status should show as connected", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 112
+    await testRunner.AndAsync("I should receive current channel status via \"RoomStatus\" message", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -315,7 +613,7 @@ await this.FeatureBackgroundAsync();
                     "cleanup"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Release broadcaster role when stopping but keep channel open", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 51
+#line 115
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -328,29 +626,32 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 52
+#line 116
     await testRunner.GivenAsync("I am broadcasting on channel \"Test-Channel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 53
+#line 117
     await testRunner.AndAsync("there are listeners waiting in the channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 54
+#line 118
     await testRunner.WhenAsync("I stop broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 55
+#line 119
     await testRunner.ThenAsync("I should release the broadcaster role for \"Test-Channel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 56
+#line 120
     await testRunner.AndAsync("listeners should be notified that the broadcaster left", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 57
+#line 121
     await testRunner.AndAsync("listeners should see \"Waiting for broadcaster...\" status", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 58
+#line 122
     await testRunner.AndAsync("the channel should remain open for listeners", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 59
+#line 123
     await testRunner.AndAsync("the channel should become available for new broadcasters", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 124
+    await testRunner.AndAsync("my UI should update to show \"? Channel available for broadcasting\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -368,7 +669,7 @@ await this.FeatureBackgroundAsync();
                     "disconnection"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Handle broadcaster disconnection gracefully for listeners", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 62
+#line 127
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -381,29 +682,32 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 63
+#line 128
     await testRunner.GivenAsync("user \"Alice\" is broadcasting on channel \"Lost-Connection\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 64
+#line 129
     await testRunner.AndAsync("there are multiple listeners in the channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 65
+#line 130
     await testRunner.WhenAsync("user \"Alice\" disconnects unexpectedly", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 66
+#line 131
     await testRunner.ThenAsync("the broadcaster role for \"Lost-Connection\" should be automatically released", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 67
+#line 132
     await testRunner.AndAsync("all listeners should receive \"BroadcasterLeft\" notification", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 68
+#line 133
     await testRunner.AndAsync("all listeners should see \"Waiting for broadcaster...\" status", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 69
+#line 134
     await testRunner.AndAsync("the channel should remain open for listeners to wait", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 70
+#line 135
     await testRunner.AndAsync("the channel should become available for new broadcasters", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 136
+    await testRunner.AndAsync("the server should log the disconnection cleanup process", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -421,7 +725,7 @@ await this.FeatureBackgroundAsync();
                     "rejoin-channel"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Broadcaster can rejoin their own channel after leaving", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 73
+#line 139
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -434,29 +738,32 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 74
+#line 140
     await testRunner.GivenAsync("I was broadcasting on channel \"My-Channel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 75
+#line 141
     await testRunner.AndAsync("I stopped broadcasting but listeners remained connected", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 76
+#line 142
     await testRunner.WhenAsync("I reconnect to the same channel \"My-Channel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 77
+#line 143
     await testRunner.AndAsync("I request broadcaster role again", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 78
-    await testRunner.ThenAsync("I should be granted broadcaster role", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 144
+    await testRunner.ThenAsync("the validation system should allow me to regain broadcaster role", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 79
+#line 145
     await testRunner.AndAsync("listeners should receive \"BroadcasterJoined\" notification", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 80
+#line 146
     await testRunner.AndAsync("listeners should see \"Live Audio\" status", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 81
+#line 147
     await testRunner.AndAsync("I should be able to resume broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 148
+    await testRunner.AndAsync("my status should show \"? You are the broadcaster\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -474,7 +781,7 @@ await this.FeatureBackgroundAsync();
                     "channel-takeover"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("New broadcaster can take over a channel after original leaves", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 84
+#line 151
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -487,29 +794,35 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 85
+#line 152
     await testRunner.GivenAsync("user \"Alice\" was broadcasting on channel \"Takeover-Test\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 86
+#line 153
     await testRunner.AndAsync("\"Alice\" has left but listeners remain connected", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 87
+#line 154
     await testRunner.AndAsync("listeners are seeing \"Waiting for broadcaster...\" status", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 88
+#line 155
     await testRunner.WhenAsync("user \"Bob\" connects to channel \"Takeover-Test\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 89
+#line 156
     await testRunner.AndAsync("user \"Bob\" requests broadcaster role", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 90
-    await testRunner.ThenAsync("user \"Bob\" should be granted broadcaster role", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 157
+    await testRunner.ThenAsync("the validation system should detect no active broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 91
+#line 158
+    await testRunner.AndAsync("user \"Bob\" should be granted broadcaster role", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 159
     await testRunner.AndAsync("listeners should receive \"BroadcasterJoined\" notification", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 92
+#line 160
     await testRunner.AndAsync("listeners should start receiving audio from \"Bob\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 161
+    await testRunner.AndAsync("\"Bob\" should see \"? You are the broadcaster\" status", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

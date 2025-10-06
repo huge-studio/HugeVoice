@@ -149,18 +149,18 @@ await this.FeatureBackgroundAsync();
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Join and manage SignalR rooms")]
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced room joining with broadcaster flag")]
         [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
-        [Xunit.TraitAttribute("Description", "Join and manage SignalR rooms")]
+        [Xunit.TraitAttribute("Description", "Enhanced room joining with broadcaster flag")]
         [Xunit.TraitAttribute("Category", "signalr")]
-        [Xunit.TraitAttribute("Category", "rooms")]
-        public async System.Threading.Tasks.Task JoinAndManageSignalRRooms()
+        [Xunit.TraitAttribute("Category", "enhanced-room-joining")]
+        public async System.Threading.Tasks.Task EnhancedRoomJoiningWithBroadcasterFlag()
         {
             string[] tagsOfScenario = new string[] {
                     "signalr",
-                    "rooms"};
+                    "enhanced-room-joining"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Join and manage SignalR rooms", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced room joining with broadcaster flag", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 20
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -178,37 +178,43 @@ await this.FeatureBackgroundAsync();
     await testRunner.GivenAsync("I am connected to the SignalR hub", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 22
-    await testRunner.WhenAsync("I specify a channel ID \"Test-Room\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("I join a channel as a potential broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 23
-    await testRunner.ThenAsync("I should join the SignalR group for \"Test-Room\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.ThenAsync("I should call \"JoinRoom\" with isBroadcaster=true parameter", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 24
-    await testRunner.AndAsync("I should be able to send and receive messages within that group", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("I should be added to the SignalR group for the channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 25
-    await testRunner.WhenAsync("I change to a different channel \"New-Room\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.AndAsync("I should receive \"RoomStatus\" message with current broadcaster status", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 26
-    await testRunner.ThenAsync("I should leave \"Test-Room\" and join \"New-Room\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.WhenAsync("I join a channel as a listener", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 27
+    await testRunner.ThenAsync("I should call \"JoinRoom\" with isBroadcaster=false parameter", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 28
+    await testRunner.AndAsync("I should receive appropriate status based on current channel state", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Handle broadcasting-related SignalR messages")]
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced broadcaster validation SignalR messages")]
         [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
-        [Xunit.TraitAttribute("Description", "Handle broadcasting-related SignalR messages")]
+        [Xunit.TraitAttribute("Description", "Enhanced broadcaster validation SignalR messages")]
         [Xunit.TraitAttribute("Category", "signalr")]
-        [Xunit.TraitAttribute("Category", "broadcasting-messages")]
-        public async System.Threading.Tasks.Task HandleBroadcasting_RelatedSignalRMessages()
+        [Xunit.TraitAttribute("Category", "broadcaster-validation-messages")]
+        public async System.Threading.Tasks.Task EnhancedBroadcasterValidationSignalRMessages()
         {
             string[] tagsOfScenario = new string[] {
                     "signalr",
-                    "broadcasting-messages"};
+                    "broadcaster-validation-messages"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Handle broadcasting-related SignalR messages", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 29
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced broadcaster validation SignalR messages", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 31
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -220,89 +226,51 @@ this.ScenarioInitialize(scenarioInfo);
                 await this.ScenarioStartAsync();
 #line 7
 await this.FeatureBackgroundAsync();
-#line hidden
-#line 30
-    await testRunner.GivenAsync("I am connected as a potential broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
-#line hidden
-#line 31
-    await testRunner.WhenAsync("I request broadcaster role for a channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 32
-    await testRunner.ThenAsync("I should receive a boolean response indicating success or failure", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.GivenAsync("I am connected as a potential broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 33
-    await testRunner.WhenAsync("another user becomes a broadcaster in my channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("I request broadcaster role for a channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 34
-    await testRunner.ThenAsync("I should receive a \"BroadcasterChanged\" notification", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.ThenAsync("I should call \"RequestBroadcasterRole\" method", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 35
-    await testRunner.WhenAsync("there are broadcast errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.AndAsync("I should receive boolean response indicating success or failure", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 36
-    await testRunner.ThenAsync("I should receive \"BroadcastError\" messages with details", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.WhenAsync("I check broadcaster status before attempting", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-            }
-            await this.ScenarioCleanupAsync();
-        }
-        
-        [Xunit.SkippableFactAttribute(DisplayName="Transmit audio data via SignalR")]
-        [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
-        [Xunit.TraitAttribute("Description", "Transmit audio data via SignalR")]
-        [Xunit.TraitAttribute("Category", "signalr")]
-        [Xunit.TraitAttribute("Category", "audio-transmission")]
-        public async System.Threading.Tasks.Task TransmitAudioDataViaSignalR()
-        {
-            string[] tagsOfScenario = new string[] {
-                    "signalr",
-                    "audio-transmission"};
-            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Transmit audio data via SignalR", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 37
+    await testRunner.ThenAsync("I should call \"CheckBroadcasterStatus\" method", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 38
+    await testRunner.AndAsync("I should receive current broadcaster status for the channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
 #line 39
-this.ScenarioInitialize(scenarioInfo);
-#line hidden
-            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
-            {
-                testRunner.SkipScenario();
-            }
-            else
-            {
-                await this.ScenarioStartAsync();
-#line 7
-await this.FeatureBackgroundAsync();
+    await testRunner.WhenAsync("broadcaster validation fails", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 40
-    await testRunner.GivenAsync("I am an active broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
-#line hidden
-#line 41
-    await testRunner.WhenAsync("I send audio chunks to the server", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
-#line 42
-    await testRunner.ThenAsync("the server should validate my broadcaster status", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-#line 43
-    await testRunner.AndAsync("the server should broadcast the audio to all other clients in the room", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
-#line hidden
-#line 44
-    await testRunner.AndAsync("unauthorized transmission attempts should be rejected", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.ThenAsync("I should receive detailed \"BroadcastError\" messages", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Receive real-time status updates as a listener")]
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced real-time status notifications")]
         [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
-        [Xunit.TraitAttribute("Description", "Receive real-time status updates as a listener")]
+        [Xunit.TraitAttribute("Description", "Enhanced real-time status notifications")]
         [Xunit.TraitAttribute("Category", "signalr")]
-        [Xunit.TraitAttribute("Category", "listener-notifications")]
-        public async System.Threading.Tasks.Task ReceiveReal_TimeStatusUpdatesAsAListener()
+        [Xunit.TraitAttribute("Category", "enhanced-status-notifications")]
+        public async System.Threading.Tasks.Task EnhancedReal_TimeStatusNotifications()
         {
             string[] tagsOfScenario = new string[] {
                     "signalr",
-                    "listener-notifications"};
+                    "enhanced-status-notifications"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Receive real-time status updates as a listener", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 47
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced real-time status notifications", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 43
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -315,26 +283,197 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 48
-    await testRunner.GivenAsync("I am listening to a channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line 44
+    await testRunner.GivenAsync("I am connected to a channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 49
+#line 45
     await testRunner.WhenAsync("a broadcaster joins the channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 50
-    await testRunner.ThenAsync("I should receive \"BroadcasterChanged\" notification with active status", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 46
+    await testRunner.ThenAsync("I should receive \"BroadcasterJoined\" notification with connection ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 51
+#line 47
     await testRunner.WhenAsync("a broadcaster leaves the channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
+#line 48
+    await testRunner.ThenAsync("I should receive \"BroadcasterLeft\" notification with connection ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 49
+    await testRunner.WhenAsync("I join a room and need status", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 50
+    await testRunner.ThenAsync("I should receive \"RoomStatus\" with current broadcaster state", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 51
+    await testRunner.WhenAsync("I need to wait for broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
 #line 52
-    await testRunner.ThenAsync("I should receive \"BroadcasterChanged\" notification with inactive status", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.ThenAsync("I should receive \"WaitingForBroadcaster\" notification", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 53
-    await testRunner.WhenAsync("I join a room with an existing broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("broadcaster becomes available", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 54
-    await testRunner.ThenAsync("I should receive \"RoomStatus\" information about the current state", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.ThenAsync("I should receive \"BroadcasterAvailable\" notification", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced audio transmission with validation")]
+        [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
+        [Xunit.TraitAttribute("Description", "Enhanced audio transmission with validation")]
+        [Xunit.TraitAttribute("Category", "signalr")]
+        [Xunit.TraitAttribute("Category", "audio-transmission-validation")]
+        public async System.Threading.Tasks.Task EnhancedAudioTransmissionWithValidation()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "signalr",
+                    "audio-transmission-validation"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced audio transmission with validation", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 57
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 58
+    await testRunner.GivenAsync("I am an active broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 59
+    await testRunner.WhenAsync("I send audio chunks to the server", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 60
+    await testRunner.ThenAsync("the server should validate my broadcaster status for every chunk", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 61
+    await testRunner.AndAsync("the server should check I\'m the active broadcaster for the room", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 62
+    await testRunner.AndAsync("the server should broadcast audio to all other clients in the room", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 63
+    await testRunner.WhenAsync("I\'m not the active broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 64
+    await testRunner.ThenAsync("unauthorized transmission attempts should be rejected", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 65
+    await testRunner.AndAsync("I should receive specific \"BroadcastError\" messages", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 66
+    await testRunner.AndAsync("error should specify \"You are not the active broadcaster for this channel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Handle concurrent broadcaster requests via SignalR")]
+        [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
+        [Xunit.TraitAttribute("Description", "Handle concurrent broadcaster requests via SignalR")]
+        [Xunit.TraitAttribute("Category", "signalr")]
+        [Xunit.TraitAttribute("Category", "concurrent-validation-handling")]
+        public async System.Threading.Tasks.Task HandleConcurrentBroadcasterRequestsViaSignalR()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "signalr",
+                    "concurrent-validation-handling"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Handle concurrent broadcaster requests via SignalR", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 69
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 70
+    await testRunner.GivenAsync("multiple users are connected to the same channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 71
+    await testRunner.WhenAsync("they request broadcaster role simultaneously", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 72
+    await testRunner.ThenAsync("SignalR should handle requests atomically using server-side locking", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 73
+    await testRunner.AndAsync("only one user should receive successful response", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 74
+    await testRunner.AndAsync("other users should receive false response", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 75
+    await testRunner.AndAsync("all clients should receive appropriate status notifications", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 76
+    await testRunner.AndAsync("server state should remain consistent", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Debug information via SignalR")]
+        [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
+        [Xunit.TraitAttribute("Description", "Debug information via SignalR")]
+        [Xunit.TraitAttribute("Category", "signalr")]
+        [Xunit.TraitAttribute("Category", "debug-information-endpoint")]
+        public async System.Threading.Tasks.Task DebugInformationViaSignalR()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "signalr",
+                    "debug-information-endpoint"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Debug information via SignalR", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 79
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 80
+    await testRunner.GivenAsync("I need to troubleshoot SignalR communication", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 81
+    await testRunner.WhenAsync("I call \"GetDebugInfo\" method", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 82
+    await testRunner.ThenAsync("I should receive current broadcaster state information", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 83
+    await testRunner.AndAsync("I should see total active broadcasters count", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 84
+    await testRunner.AndAsync("I should see active broadcasters per channel mapping", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 85
+    await testRunner.AndAsync("I should see room listener counts", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 86
+    await testRunner.AndAsync("I should see my requesting connection ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 87
+    await testRunner.AndAsync("information should be logged on server for debugging", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -352,7 +491,7 @@ await this.FeatureBackgroundAsync();
                     "connection-recovery"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Handle connection interruptions", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 57
+#line 90
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -365,41 +504,103 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 58
+#line 91
     await testRunner.GivenAsync("I have an active SignalR connection", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 59
+#line 92
     await testRunner.WhenAsync("the connection is temporarily lost", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 60
+#line 93
     await testRunner.ThenAsync("the SignalR client should attempt to reconnect automatically", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 61
+#line 94
     await testRunner.AndAsync("I should see appropriate connection status updates", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 62
+#line 95
     await testRunner.WhenAsync("the connection is restored", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 63
+#line 96
     await testRunner.ThenAsync("I should rejoin my previous room automatically", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 97
+    await testRunner.AndAsync("I should receive updated broadcaster status information", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Support multiple concurrent channels")]
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced SignalR error handling and logging")]
         [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
-        [Xunit.TraitAttribute("Description", "Support multiple concurrent channels")]
+        [Xunit.TraitAttribute("Description", "Enhanced SignalR error handling and logging")]
+        [Xunit.TraitAttribute("Category", "signalr")]
+        [Xunit.TraitAttribute("Category", "enhanced-error-handling")]
+        public async System.Threading.Tasks.Task EnhancedSignalRErrorHandlingAndLogging()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "signalr",
+                    "enhanced-error-handling"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced SignalR error handling and logging", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 100
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 101
+    await testRunner.GivenAsync("I am using SignalR communication", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 102
+    await testRunner.WhenAsync("the server is unavailable", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 103
+    await testRunner.ThenAsync("I should see \"Failed to connect to audio hub\" error messages", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 104
+    await testRunner.WhenAsync("message transmission fails", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 105
+    await testRunner.ThenAsync("errors should be logged with detailed information", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 106
+    await testRunner.WhenAsync("hub method calls fail", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 107
+    await testRunner.ThenAsync("I should receive meaningful error feedback with specific reasons", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 108
+    await testRunner.WhenAsync("validation fails", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 109
+    await testRunner.ThenAsync("I should receive user-friendly error messages", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 110
+    await testRunner.AndAsync("server should log detailed validation failure information", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Support multiple concurrent channels with enhanced validation")]
+        [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
+        [Xunit.TraitAttribute("Description", "Support multiple concurrent channels with enhanced validation")]
         [Xunit.TraitAttribute("Category", "signalr")]
         [Xunit.TraitAttribute("Category", "scalability")]
-        public async System.Threading.Tasks.Task SupportMultipleConcurrentChannels()
+        public async System.Threading.Tasks.Task SupportMultipleConcurrentChannelsWithEnhancedValidation()
         {
             string[] tagsOfScenario = new string[] {
                     "signalr",
                     "scalability"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Support multiple concurrent channels", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 66
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Support multiple concurrent channels with enhanced validation", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 113
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -412,38 +613,44 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 67
+#line 114
     await testRunner.GivenAsync("there are multiple active channels simultaneously", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 68
+#line 115
     await testRunner.WhenAsync("users are broadcasting and listening across different channels", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 69
+#line 116
     await testRunner.ThenAsync("each channel should operate independently", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 70
+#line 117
+    await testRunner.AndAsync("broadcaster validation should work per-channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 118
     await testRunner.AndAsync("messages should only be delivered to clients in the same room", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 71
+#line 119
     await testRunner.AndAsync("the server should handle multiple concurrent connections efficiently", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
+#line 120
+    await testRunner.AndAsync("validation should not interfere between channels", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Clean up connections and resources")]
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced cleanup and channel persistence")]
         [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
-        [Xunit.TraitAttribute("Description", "Clean up connections and resources")]
+        [Xunit.TraitAttribute("Description", "Enhanced cleanup and channel persistence")]
         [Xunit.TraitAttribute("Category", "signalr")]
-        [Xunit.TraitAttribute("Category", "cleanup")]
-        public async System.Threading.Tasks.Task CleanUpConnectionsAndResources()
+        [Xunit.TraitAttribute("Category", "cleanup-and-persistence")]
+        public async System.Threading.Tasks.Task EnhancedCleanupAndChannelPersistence()
         {
             string[] tagsOfScenario = new string[] {
                     "signalr",
-                    "cleanup"};
+                    "cleanup-and-persistence"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Clean up connections and resources", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 74
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced cleanup and channel persistence", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 123
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -456,41 +663,47 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 75
+#line 124
     await testRunner.GivenAsync("I have active SignalR connections and room memberships", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 76
+#line 125
     await testRunner.WhenAsync("I close the browser or navigate away", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 77
+#line 126
     await testRunner.ThenAsync("my connection should be properly cleaned up", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 78
+#line 127
     await testRunner.AndAsync("I should be removed from any SignalR groups", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 79
+#line 128
     await testRunner.AndAsync("my broadcaster role should be released if applicable", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 80
+#line 129
     await testRunner.AndAsync("other clients should be notified of my disconnection", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 130
+    await testRunner.ButAsync("channels should remain open for remaining listeners", ((string)(null)), ((global::Reqnroll.Table)(null)), "But ");
+#line hidden
+#line 131
+    await testRunner.AndAsync("cleanup should be logged for debugging", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Handle SignalR communication errors")]
+        [Xunit.SkippableFactAttribute(DisplayName="Ensure proper message ordering for validation")]
         [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
-        [Xunit.TraitAttribute("Description", "Handle SignalR communication errors")]
+        [Xunit.TraitAttribute("Description", "Ensure proper message ordering for validation")]
         [Xunit.TraitAttribute("Category", "signalr")]
-        [Xunit.TraitAttribute("Category", "error-handling")]
-        public async System.Threading.Tasks.Task HandleSignalRCommunicationErrors()
+        [Xunit.TraitAttribute("Category", "message-ordering")]
+        public async System.Threading.Tasks.Task EnsureProperMessageOrderingForValidation()
         {
             string[] tagsOfScenario = new string[] {
                     "signalr",
-                    "error-handling"};
+                    "message-ordering"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Handle SignalR communication errors", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 83
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Ensure proper message ordering for validation", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 134
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -503,26 +716,123 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 84
-    await testRunner.GivenAsync("I am using SignalR communication", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line 135
+    await testRunner.GivenAsync("broadcaster status changes are occurring rapidly", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 85
-    await testRunner.WhenAsync("the server is unavailable", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 136
+    await testRunner.WhenAsync("multiple status update messages are sent", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 86
-    await testRunner.ThenAsync("I should see appropriate connection error messages", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 137
+    await testRunner.ThenAsync("messages should arrive in the correct order", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 87
-    await testRunner.WhenAsync("message transmission fails", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 138
+    await testRunner.AndAsync("clients should process status updates sequentially", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 88
-    await testRunner.ThenAsync("errors should be logged and handled gracefully", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 139
+    await testRunner.AndAsync("UI should reflect the most current status", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 89
-    await testRunner.WhenAsync("the hub method calls fail", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 140
+    await testRunner.AndAsync("validation should be based on the latest server state", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 90
-    await testRunner.ThenAsync("I should receive meaningful error feedback", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="SignalR security validation for broadcaster role")]
+        [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
+        [Xunit.TraitAttribute("Description", "SignalR security validation for broadcaster role")]
+        [Xunit.TraitAttribute("Category", "signalr")]
+        [Xunit.TraitAttribute("Category", "security-validation")]
+        public async System.Threading.Tasks.Task SignalRSecurityValidationForBroadcasterRole()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "signalr",
+                    "security-validation"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("SignalR security validation for broadcaster role", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 143
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 144
+    await testRunner.GivenAsync("I am connected to a channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 145
+    await testRunner.WhenAsync("I attempt to send audio without proper broadcaster role", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 146
+    await testRunner.ThenAsync("server should validate my broadcaster status on every audio chunk", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 147
+    await testRunner.AndAsync("unauthorized audio transmission should be rejected", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 148
+    await testRunner.AndAsync("I should receive security-related error messages", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 149
+    await testRunner.AndAsync("server should log unauthorized transmission attempts", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 150
+    await testRunner.AndAsync("other clients should not receive unauthorized audio data", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Efficient batch status updates")]
+        [Xunit.TraitAttribute("FeatureTitle", "Real-time Communication")]
+        [Xunit.TraitAttribute("Description", "Efficient batch status updates")]
+        [Xunit.TraitAttribute("Category", "signalr")]
+        [Xunit.TraitAttribute("Category", "batch-status-updates")]
+        public async System.Threading.Tasks.Task EfficientBatchStatusUpdates()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "signalr",
+                    "batch-status-updates"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Efficient batch status updates", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 153
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 154
+    await testRunner.GivenAsync("multiple clients are connected to channels", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 155
+    await testRunner.WhenAsync("broadcaster status changes occur", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 156
+    await testRunner.ThenAsync("server should efficiently notify all relevant clients", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 157
+    await testRunner.AndAsync("notifications should be batched where appropriate", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 158
+    await testRunner.AndAsync("each client should receive only relevant status updates", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 159
+    await testRunner.AndAsync("network traffic should be optimized", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 160
+    await testRunner.AndAsync("all clients should receive consistent status information", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

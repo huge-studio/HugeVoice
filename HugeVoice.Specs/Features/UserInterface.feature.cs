@@ -245,6 +245,118 @@ await this.FeatureBackgroundAsync();
 #line 37
     await testRunner.AndAsync("I should see broadcasting control buttons", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
+#line 38
+    await testRunner.AndAsync("I should see the new channel status display card", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced channel status display")]
+        [Xunit.TraitAttribute("FeatureTitle", "User Interface and Navigation")]
+        [Xunit.TraitAttribute("Description", "Enhanced channel status display")]
+        [Xunit.TraitAttribute("Category", "ui")]
+        [Xunit.TraitAttribute("Category", "channel-status-display")]
+        public async System.Threading.Tasks.Task EnhancedChannelStatusDisplay()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "ui",
+                    "channel-status-display"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced channel status display", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 41
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 42
+    await testRunner.GivenAsync("I am connected to a channel on the broadcast page", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 43
+    await testRunner.WhenAsync("the channel has no broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 44
+    await testRunner.ThenAsync("I should see a success-colored status card", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 45
+    await testRunner.AndAsync("I should see \"? Channel available for broadcasting\" with green check icon", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 46
+    await testRunner.WhenAsync("another user becomes the broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 47
+    await testRunner.ThenAsync("I should see a warning-colored status card", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 48
+    await testRunner.AndAsync("I should see \"? Channel occupied by another broadcaster\" with warning icon", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 49
+    await testRunner.WhenAsync("I become the broadcaster", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 50
+    await testRunner.ThenAsync("I should see a success-colored status card", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 51
+    await testRunner.AndAsync("I should see \"? You are the broadcaster\" with broadcast icon", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Real-time UI status updates")]
+        [Xunit.TraitAttribute("FeatureTitle", "User Interface and Navigation")]
+        [Xunit.TraitAttribute("Description", "Real-time UI status updates")]
+        [Xunit.TraitAttribute("Category", "ui")]
+        [Xunit.TraitAttribute("Category", "real-time-status-updates")]
+        public async System.Threading.Tasks.Task Real_TimeUIStatusUpdates()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "ui",
+                    "real-time-status-updates"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Real-time UI status updates", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 54
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 55
+    await testRunner.GivenAsync("I am on the broadcast page", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 56
+    await testRunner.WhenAsync("broadcaster status changes occur", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 57
+    await testRunner.ThenAsync("the channel status card should update immediately", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 58
+    await testRunner.AndAsync("the status colors should change appropriately", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 59
+    await testRunner.AndAsync("the status icons should update", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 60
+    await testRunner.AndAsync("the status text should reflect current state", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 61
+    await testRunner.AndAsync("updates should happen without page refresh", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
             }
             await this.ScenarioCleanupAsync();
         }
@@ -261,7 +373,7 @@ await this.FeatureBackgroundAsync();
                     "listening-interface"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Listening page user interface", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 40
+#line 64
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -274,23 +386,26 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 41
+#line 65
     await testRunner.GivenAsync("I am on the listen page for a channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 42
+#line 66
     await testRunner.ThenAsync("I should see the channel connection status", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 43
+#line 67
     await testRunner.AndAsync("I should see a QR code for sharing", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 44
+#line 68
     await testRunner.AndAsync("I should see the room ID and listener URL", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 45
+#line 69
     await testRunner.AndAsync("I should see audio status indicators", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 46
+#line 70
     await testRunner.AndAsync("I should see an audio activation button if needed", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 71
+    await testRunner.AndAsync("I should see appropriate waiting/listening status displays", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -308,7 +423,7 @@ await this.FeatureBackgroundAsync();
                     "visual-feedback"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Visual feedback for user actions", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 49
+#line 74
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -321,32 +436,97 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 50
+#line 75
     await testRunner.GivenAsync("I am using the application", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 51
+#line 76
     await testRunner.WhenAsync("I am connecting to a channel", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 52
+#line 77
     await testRunner.ThenAsync("I should see loading spinners and progress indicators", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 53
+#line 78
     await testRunner.WhenAsync("I successfully connect", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 54
+#line 79
     await testRunner.ThenAsync("I should see success messages with green styling", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 55
+#line 80
     await testRunner.WhenAsync("an error occurs", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 56
+#line 81
     await testRunner.ThenAsync("I should see error messages with red styling and warning icons", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 57
+#line 82
     await testRunner.WhenAsync("I am broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 58
+#line 83
     await testRunner.ThenAsync("I should see live indicators with animated elements", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 84
+    await testRunner.WhenAsync("validation fails", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 85
+    await testRunner.ThenAsync("I should see specific error messages with helpful guidance", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced error messaging for validation")]
+        [Xunit.TraitAttribute("FeatureTitle", "User Interface and Navigation")]
+        [Xunit.TraitAttribute("Description", "Enhanced error messaging for validation")]
+        [Xunit.TraitAttribute("Category", "ui")]
+        [Xunit.TraitAttribute("Category", "enhanced-error-messaging")]
+        public async System.Threading.Tasks.Task EnhancedErrorMessagingForValidation()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "ui",
+                    "enhanced-error-messaging"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced error messaging for validation", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 88
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 89
+    await testRunner.GivenAsync("I am attempting to broadcast", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 90
+    await testRunner.WhenAsync("single-broadcaster validation fails", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 91
+    await testRunner.ThenAsync("I should see \"Another broadcaster is already active on this channel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 92
+    await testRunner.AndAsync("I should see \"Please try a different channel\" guidance", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 93
+    await testRunner.WhenAsync("I\'m already broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 94
+    await testRunner.ThenAsync("I should see \"You are already broadcasting on this channel\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 95
+    await testRunner.WhenAsync("connection fails", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 96
+    await testRunner.ThenAsync("I should see \"Not connected to the server. Please try connecting first\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 97
+    await testRunner.WhenAsync("race condition occurs", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 98
+    await testRunner.ThenAsync("I should see \"Another broadcaster became active on this channel just now\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -364,7 +544,7 @@ await this.FeatureBackgroundAsync();
                     "accessibility"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Accessibility features", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 61
+#line 101
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -377,23 +557,26 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 62
+#line 102
     await testRunner.GivenAsync("I am using the application with accessibility needs", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 63
+#line 103
     await testRunner.WhenAsync("I navigate using keyboard only", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 64
+#line 104
     await testRunner.ThenAsync("all interactive elements should be accessible via keyboard", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 65
+#line 105
     await testRunner.WhenAsync("I use a screen reader", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 66
+#line 106
     await testRunner.ThenAsync("appropriate ARIA labels and descriptions should be available", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 67
+#line 107
     await testRunner.AndAsync("status changes should be announced", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 108
+    await testRunner.AndAsync("channel status changes should be communicated to screen readers", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -411,7 +594,7 @@ await this.FeatureBackgroundAsync();
                     "home-page"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Home page information and guidance", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 70
+#line 111
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -424,42 +607,42 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 71
+#line 112
     await testRunner.GivenAsync("I am on the home page", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 72
+#line 113
     await testRunner.ThenAsync("I should see the HugeVoice branding and logo", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 73
+#line 114
     await testRunner.AndAsync("I should see a clear explanation of how the app works", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 74
+#line 115
     await testRunner.AndAsync("I should see the three-step process: \"Create a channel\", \"Share your channel\", \"S" +
                         "tart broadcasting\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 75
+#line 116
     await testRunner.AndAsync("I should see attractive cards for \"Start Broadcasting\" and \"Listen to Broadcast\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 76
+#line 117
     await testRunner.AndAsync("I should see helpful information about QR codes and channel names", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="User-friendly error messages")]
+        [Xunit.SkippableFactAttribute(DisplayName="Enhanced warning and information messages")]
         [Xunit.TraitAttribute("FeatureTitle", "User Interface and Navigation")]
-        [Xunit.TraitAttribute("Description", "User-friendly error messages")]
+        [Xunit.TraitAttribute("Description", "Enhanced warning and information messages")]
         [Xunit.TraitAttribute("Category", "ui")]
-        [Xunit.TraitAttribute("Category", "error-handling")]
-        public async System.Threading.Tasks.Task User_FriendlyErrorMessages()
+        [Xunit.TraitAttribute("Category", "improved-warning-messages")]
+        public async System.Threading.Tasks.Task EnhancedWarningAndInformationMessages()
         {
             string[] tagsOfScenario = new string[] {
                     "ui",
-                    "error-handling"};
+                    "improved-warning-messages"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("User-friendly error messages", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 79
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Enhanced warning and information messages", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 120
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -472,29 +655,182 @@ this.ScenarioInitialize(scenarioInfo);
 #line 7
 await this.FeatureBackgroundAsync();
 #line hidden
-#line 80
-    await testRunner.GivenAsync("I encounter various error conditions", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line 121
+    await testRunner.GivenAsync("I am on the broadcast page", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 81
-    await testRunner.WhenAsync("a connection fails", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 122
+    await testRunner.WhenAsync("I view the warning section", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 82
-    await testRunner.ThenAsync("I should see \"Failed to connect to audio hub\" with details", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 123
+    await testRunner.ThenAsync("I should see information about microphone permissions", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 83
-    await testRunner.WhenAsync("microphone access is denied", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 124
+    await testRunner.AndAsync("I should see \"Single Broadcaster Rule\" explanation", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 84
-    await testRunner.ThenAsync("I should see appropriate browser permission guidance", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 125
+    await testRunner.AndAsync("I should see \"Only one broadcaster is allowed per channel at a time\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 85
-    await testRunner.WhenAsync("a channel is occupied", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 126
+    await testRunner.AndAsync("I should see information about validation errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 86
-    await testRunner.ThenAsync("I should see \"Channel Occupied: Another broadcaster is already active\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 127
+    await testRunner.AndAsync("the warning should be more comprehensive than before", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 87
-    await testRunner.AndAsync("I should be provided with actionable next steps", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Consistent color coding for status")]
+        [Xunit.TraitAttribute("FeatureTitle", "User Interface and Navigation")]
+        [Xunit.TraitAttribute("Description", "Consistent color coding for status")]
+        [Xunit.TraitAttribute("Category", "ui")]
+        [Xunit.TraitAttribute("Category", "color-coding-system")]
+        public async System.Threading.Tasks.Task ConsistentColorCodingForStatus()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "ui",
+                    "color-coding-system"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Consistent color coding for status", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 130
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 131
+    await testRunner.GivenAsync("I am using the application", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 132
+    await testRunner.WhenAsync("I see success states", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 133
+    await testRunner.ThenAsync("they should use green colors consistently", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 134
+    await testRunner.WhenAsync("I see warning states", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 135
+    await testRunner.ThenAsync("they should use yellow/orange colors consistently", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 136
+    await testRunner.WhenAsync("I see error states", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 137
+    await testRunner.ThenAsync("they should use red colors consistently", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 138
+    await testRunner.WhenAsync("I see info states", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 139
+    await testRunner.ThenAsync("they should use blue colors consistently", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 140
+    await testRunner.AndAsync("color coding should be consistent across all components", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Loading states during validation")]
+        [Xunit.TraitAttribute("FeatureTitle", "User Interface and Navigation")]
+        [Xunit.TraitAttribute("Description", "Loading states during validation")]
+        [Xunit.TraitAttribute("Category", "ui")]
+        [Xunit.TraitAttribute("Category", "loading-states")]
+        public async System.Threading.Tasks.Task LoadingStatesDuringValidation()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "ui",
+                    "loading-states"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Loading states during validation", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 143
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 144
+    await testRunner.GivenAsync("I am attempting to start broadcasting", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 145
+    await testRunner.WhenAsync("validation is in progress", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 146
+    await testRunner.ThenAsync("UI should show appropriate loading indicators", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 147
+    await testRunner.AndAsync("buttons should be disabled during validation", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 148
+    await testRunner.AndAsync("status should indicate \"checking broadcaster status\" or similar", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 149
+    await testRunner.AndAsync("loading should complete with success or error state", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Responsive channel status cards")]
+        [Xunit.TraitAttribute("FeatureTitle", "User Interface and Navigation")]
+        [Xunit.TraitAttribute("Description", "Responsive channel status cards")]
+        [Xunit.TraitAttribute("Category", "ui")]
+        [Xunit.TraitAttribute("Category", "responsive-status-cards")]
+        public async System.Threading.Tasks.Task ResponsiveChannelStatusCards()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "ui",
+                    "responsive-status-cards"};
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Responsive channel status cards", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 152
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 7
+await this.FeatureBackgroundAsync();
+#line hidden
+#line 153
+    await testRunner.GivenAsync("I am viewing the channel status card", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 154
+    await testRunner.WhenAsync("I view it on different screen sizes", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 155
+    await testRunner.ThenAsync("the card should adapt to screen width", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 156
+    await testRunner.AndAsync("text should remain readable", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 157
+    await testRunner.AndAsync("icons should remain visible", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 158
+    await testRunner.AndAsync("color coding should be preserved", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 159
+    await testRunner.AndAsync("the card should integrate well with the overall layout", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

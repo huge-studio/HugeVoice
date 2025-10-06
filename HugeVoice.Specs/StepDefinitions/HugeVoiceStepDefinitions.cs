@@ -23,6 +23,13 @@ namespace HugeVoice.Specs.StepDefinitions
             // TODO: Verify SignalR hub connectivity
             throw new PendingStepException();
         }
+
+        [Given("the enhanced validation system is active")]
+        public void GivenTheEnhancedValidationSystemIsActive()
+        {
+            // TODO: Verify enhanced validation system is configured
+            throw new PendingStepException();
+        }
         #endregion
 
         #region Navigation
@@ -71,7 +78,7 @@ namespace HugeVoice.Specs.StepDefinitions
         }
         #endregion
 
-        #region Broadcasting
+        #region Broadcasting and Connection
         [When("I connect to the hub")]
         public void WhenIConnectToTheHub()
         {
@@ -108,11 +115,113 @@ namespace HugeVoice.Specs.StepDefinitions
         }
         #endregion
 
+        #region Enhanced Validation Steps
+        [Given("I am attempting to broadcast on channel \"(.*)\"")]
+        public void GivenIAmAttemptingToBroadcastOnChannel(string channelId)
+        {
+            // TODO: Set up broadcast attempt scenario
+            throw new PendingStepException();
+        }
+
+        [When("I click \"Start Broadcasting\"")]
+        public void WhenIClickStartBroadcasting()
+        {
+            // TODO: Trigger start broadcasting action
+            throw new PendingStepException();
+        }
+
+        [Then("the system should execute Layer (\\d+): (.*)")]
+        public void ThenTheSystemShouldExecuteLayer(int layerNumber, string layerDescription)
+        {
+            // TODO: Verify specific validation layer execution
+            throw new PendingStepException();
+        }
+
+        [Then("each layer should be logged for debugging purposes")]
+        public void ThenEachLayerShouldBeLoggedForDebuggingPurposes()
+        {
+            // TODO: Verify logging of validation layers
+            throw new PendingStepException();
+        }
+
+        [Then("validation should fail at the first applicable layer")]
+        public void ThenValidationShouldFailAtTheFirstApplicableLayer()
+        {
+            // TODO: Verify early validation failure
+            throw new PendingStepException();
+        }
+
+        [Given("I am already broadcasting on channel \"(.*)\"")]
+        public void GivenIAmAlreadyBroadcastingOnChannel(string channelId)
+        {
+            // TODO: Set up already broadcasting scenario
+            throw new PendingStepException();
+        }
+
+        [Then("Layer (\\d+) validation should catch this immediately")]
+        public void ThenLayerValidationShouldCatchThisImmediately(int layerNumber)
+        {
+            // TODO: Verify specific layer catches the issue
+            throw new PendingStepException();
+        }
+
+        [Then("no server calls should be made")]
+        public void ThenNoServerCallsShouldBeMade()
+        {
+            // TODO: Verify no unnecessary server communication
+            throw new PendingStepException();
+        }
+
+        [Then("the validation should stop at Layer (\\d+)")]
+        public void ThenTheValidationShouldStopAtLayer(int layerNumber)
+        {
+            // TODO: Verify validation stops at specific layer
+            throw new PendingStepException();
+        }
+        #endregion
+
+        #region Channel Status Display
+        [Then("I should see \"(.*)\" status")]
+        public void ThenIShouldSeeStatus(string statusText)
+        {
+            // TODO: Verify specific status display
+            throw new PendingStepException();
+        }
+
+        [Then("I should see a success-colored status card")]
+        public void ThenIShouldSeeASuccessColoredStatusCard()
+        {
+            // TODO: Verify green/success colored status card
+            throw new PendingStepException();
+        }
+
+        [Then("I should see a warning-colored status card")]
+        public void ThenIShouldSeeAWarningColoredStatusCard()
+        {
+            // TODO: Verify yellow/warning colored status card
+            throw new PendingStepException();
+        }
+
+        [Then("I should see \"(.*)\" with (.*)")]
+        public void ThenIShouldSeeWithStyling(string text, string styling)
+        {
+            // TODO: Verify text with specific styling (e.g., "green check icon")
+            throw new PendingStepException();
+        }
+        #endregion
+
         #region Multi-user Scenarios
         [Given("user \"(.*)\" is already broadcasting on channel \"(.*)\"")]
         public void GivenUserIsAlreadyBroadcastingOnChannel(string username, string channelId)
         {
             // TODO: Set up user broadcasting scenario
+            throw new PendingStepException();
+        }
+
+        [When("user \"(.*)\" connects to channel \"(.*)\" as potential broadcaster")]
+        public void WhenUserConnectsToChannelAsPotentialBroadcaster(string username, string channelId)
+        {
+            // TODO: Simulate user connecting as potential broadcaster
             throw new PendingStepException();
         }
 
@@ -136,6 +245,73 @@ namespace HugeVoice.Specs.StepDefinitions
             // TODO: Verify broadcaster role denial
             throw new PendingStepException();
         }
+
+        [When("user \"(.*)\" and user \"(.*)\" attempt to start broadcasting simultaneously")]
+        public void WhenUsersAttemptToBroadcastSimultaneously(string user1, string user2)
+        {
+            // TODO: Simulate concurrent broadcast attempts
+            throw new PendingStepException();
+        }
+
+        [Then("only one user should be granted broadcaster role")]
+        public void ThenOnlyOneUserShouldBeGrantedBroadcasterRole()
+        {
+            // TODO: Verify only one broadcaster succeeds
+            throw new PendingStepException();
+        }
+        #endregion
+
+        #region SignalR and Communication
+        [When("I call \"(.*)\" method")]
+        public void WhenICallMethod(string methodName)
+        {
+            // TODO: Trigger specific SignalR method call
+            throw new PendingStepException();
+        }
+
+        [Then("I should receive \"(.*)\" message")]
+        public void ThenIShouldReceiveMessage(string messageName)
+        {
+            // TODO: Verify specific SignalR message received
+            throw new PendingStepException();
+        }
+
+        [Then("I should call \"(.*)\" with (.*)")]
+        public void ThenIShouldCallMethodWith(string methodName, string parameters)
+        {
+            // TODO: Verify specific method call with parameters
+            throw new PendingStepException();
+        }
+        #endregion
+
+        #region Debug and Logging
+        [When("I call the debug endpoint")]
+        public void WhenICallTheDebugEndpoint()
+        {
+            // TODO: Trigger debug information request
+            throw new PendingStepException();
+        }
+
+        [Then("I should receive current active broadcasters list")]
+        public void ThenIShouldReceiveCurrentActiveBroadcastersList()
+        {
+            // TODO: Verify debug information contains broadcaster list
+            throw new PendingStepException();
+        }
+
+        [Then("console should log \"(.*)\"")]
+        public void ThenConsoleShouldLog(string expectedLogMessage)
+        {
+            // TODO: Verify console logging
+            throw new PendingStepException();
+        }
+
+        [Then("the server should log (.*)")]
+        public void ThenTheServerShouldLog(string logDescription)
+        {
+            // TODO: Verify server-side logging
+            throw new PendingStepException();
+        }
         #endregion
 
         #region UI Verification
@@ -150,6 +326,20 @@ namespace HugeVoice.Specs.StepDefinitions
         public void ThenTheQRCodeShouldBeUpdatedWithTheNewChannelURL()
         {
             // TODO: Verify QR code update
+            throw new PendingStepException();
+        }
+
+        [Then("the channel status card should update immediately")]
+        public void ThenTheChannelStatusCardShouldUpdateImmediately()
+        {
+            // TODO: Verify real-time UI updates
+            throw new PendingStepException();
+        }
+
+        [Then("I should see the new channel status display card")]
+        public void ThenIShouldSeeTheNewChannelStatusDisplayCard()
+        {
+            // TODO: Verify new UI component exists
             throw new PendingStepException();
         }
         #endregion
@@ -189,6 +379,20 @@ namespace HugeVoice.Specs.StepDefinitions
         public void ThenIShouldSeeAnAppropriateErrorMessage()
         {
             // TODO: Verify error message display
+            throw new PendingStepException();
+        }
+
+        [When("validation fails due to network error")]
+        public void WhenValidationFailsDueToNetworkError()
+        {
+            // TODO: Simulate network error during validation
+            throw new PendingStepException();
+        }
+
+        [Then("the system should reset validation state")]
+        public void ThenTheSystemShouldResetValidationState()
+        {
+            // TODO: Verify validation state cleanup
             throw new PendingStepException();
         }
         #endregion
