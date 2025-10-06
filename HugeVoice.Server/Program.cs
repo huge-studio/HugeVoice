@@ -2,25 +2,26 @@ using HugeVoice.Server.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Blazor WASM hosting support
-builder.Services.AddRazorPages();
+// Add services for Blazor WebAssembly hosting
+builder.Services.AddSignalR();
 
-builder.Services.AddSignalR(options =>
+// Add CORS for Blazor Client
+builder.Services.AddCors(options =>
 {
-    // Increase message size limits for audio data
-    options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10MB
-    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
-    
-    // Set timeouts for better connection stability
-    options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
-    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.AddPolicy("BlazorClient", policy =>
+    {
+        policy.WithOrigins("https://localhost:7167", "http://localhost:5263")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
 });
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
     app.UseWebAssemblyDebugging();
 }
 else
@@ -31,15 +32,16 @@ else
 
 app.UseHttpsRedirection();
 
-// Serve Blazor WASM static files
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseCors("BlazorClient");
 
+// Map SignalR Hub
 app.MapHub<AudioStreamHub>("/audiohub");
 
-// Fallback to serve the Blazor WASM app
+// Serve Blazor WebAssembly
 app.MapFallbackToFile("index.html");
 
 app.Run();

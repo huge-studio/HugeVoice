@@ -7,6 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HugeVoice.Client", "HugeVoi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HugeVoice.Server", "HugeVoice.Server\HugeVoice.Server.csproj", "{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{45FE8D6D-C5F4-40EB-A413-56CDF4B3967E}"
+	ProjectSection(SolutionItems) = preProject
+		.github\copilot.instructions.md = .github\copilot.instructions.md
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HugeVoice.Specs", "HugeVoice.Specs\HugeVoice.Specs.csproj", "{00251159-A745-442D-8941-32719B02EFF1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +29,10 @@ Global
 		{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83F12DA8-03DE-B1ED-F077-8CEC9F6B9BBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00251159-A745-442D-8941-32719B02EFF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00251159-A745-442D-8941-32719B02EFF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00251159-A745-442D-8941-32719B02EFF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00251159-A745-442D-8941-32719B02EFF1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

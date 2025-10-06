@@ -1,0 +1,31 @@
+{
+  "reqnroll": {
+    "language": {
+      "feature": "en"
+    },
+    "bindingCulture": {
+      "name": "en-US"
+    },
+    "stepAssemblies": [
+      {
+        "assembly": "HugeVoice.Specs"
+      }
+    ],
+    "features": [
+      {
+        "path": "Features"
+      }
+    ]
+  },
+  "tags": [
+    "@broadcasting",
+    "@listening", 
+    "@channels",
+    "@ui",
+    "@audio",
+    "@signalr",
+    "@happy-path",
+    "@error-handling",
+    "@multi-user"
+  ]
+}

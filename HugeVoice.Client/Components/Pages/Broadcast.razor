@@ -2,8 +2,11 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.JSInterop
 @using QRCoder
+@using HugeVoice.Client.Services
+@using Microsoft.AspNetCore.Components.Forms
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject AnimalNameGenerator AnimalNameGenerator
 @implements IAsyncDisposable
 
 <PageTitle>Broadcast - HugeVox</PageTitle>
@@ -48,18 +51,41 @@
                     </div>
                     
                     <div class="col-12 col-md-6">
-                        <h5 class="mb-3">Broadcast Details</h5>
+                        <h5 class="mb-3">Channel Setup</h5>
+                        
                         <div class="mb-3">
-                            <label class="form-label text-muted small">Room ID</label>
+                            <label class="form-label">Channel ID</label>
                             <div class="input-group">
-                                <input type="text" class="form-control font-monospace" value="@_roomId" readonly />
-                                <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('@_roomId')">
+                              
+                                    <InputText @bind-Value="_channelId" @oninput="OnChannelIdChanged" 
+                                               class="form-control font-monospace fw-bold" 
+                                               placeholder="Enter channel ID"
+                                               disabled ="@_isRecording"
+                                               />
+                                <button class="btn btn-outline-secondary" type="button" @onclick="GenerateNewChannelId" 
+                                        disabled="@_isRecording" title="Generate new channel ID">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                                    </svg>
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('@_channelId')">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
                                         <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                                         <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
                                     </svg>
                                 </button>
                             </div>
+                            <small class="text-muted">
+                                @if (_isRecording)
+                                {
+                                    <text>Channel ID cannot be changed while broadcasting</text>
+                                }
+                                else
+                                {
+                                    <text>Enter a custom channel ID or generate a random one. Share this ID with your listeners.</text>
+                                }
+                            </small>
                         </div>
                         
                         <div class="mb-4">
@@ -80,24 +106,67 @@
                             {
                                 <div class="alert alert-warning">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
-                                        <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                                        <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
                                     <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
                                     </svg>
                                     <strong>Connection Status:</strong> @(_hubConnection?.State.ToString() ?? "Not Connected")
                                 </div>
-                            }
-                            
-                            @if (!_isRecording)
-                            {
-                                <button @onclick="StartRecording" class="btn btn-success btn-lg" disabled="@(_hubConnection?.State != HubConnectionState.Connected)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-circle me-2" viewBox="0 0 16 16">
-                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                        <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
+                                
+                                <button @onclick="ConnectToHub" class="btn btn-primary btn-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-broadcast me-2" viewBox="0 0 16 16">
+                                        <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM8 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
                                     </svg>
-                                    Start Broadcasting
+                                    Create Channel
                                 </button>
                             }
-                            else
+                            else if (!_isRecording && !_isBroadcaster)
+                            {
+                                @if (_channelHasBroadcaster)
+                                {
+                                    <div class="alert alert-warning">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
+                                            <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                                        <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
+                                        </svg>
+                                        <strong>Channel Occupied:</strong> Another broadcaster is already active on <strong>@_channelId</strong>
+                                    </div>
+                                    
+                                    <button @onclick="DisconnectFromHub" class="btn btn-outline-secondary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle me-2" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                        </svg>
+                                        Try Different Channel
+                                    </button>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle me-2" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                                        </svg>
+                                        <strong>Channel Available:</strong> Ready to broadcast on <strong>@_channelId</strong>
+                                    </div>
+                                    
+                                    <button @onclick="StartRecording" class="btn btn-success btn-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-circle me-2" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
+                                        </svg>
+                                        Start Broadcasting
+                                    </button>
+                                    
+                                    <button @onclick="DisconnectFromHub" class="btn btn-outline-secondary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle me-2" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                        </svg>
+                                        Change Channel
+                                    </button>
+                                }
+                            }
+                            else if (_isRecording)
                             {
                                 <button @onclick="StopRecording" class="btn btn-danger btn-lg">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-stop-circle me-2" viewBox="0 0 16 16">
@@ -112,7 +181,7 @@
                                     </div>
                                     <div>
                                         <strong>● Live Broadcasting</strong><br />
-                                        <small>Your audio is being streamed</small>
+                                        <small>Your audio is being streamed on channel: <strong>@_channelId</strong></small>
                                     </div>
                                 </div>
                             }
@@ -124,17 +193,18 @@
 
         <div class="alert alert-warning mt-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
-                <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-                <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
+                <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+            <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
             </svg>
             <strong>Note:</strong> Your browser will request microphone permission. Please allow access to start broadcasting.
+            Only one broadcaster is allowed per channel at a time.
         </div>
 
         @if (!string.IsNullOrEmpty(_errorMessage))
         {
             <div class="alert alert-danger mt-3">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
-                    <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                    <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
                 <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
                 </svg>
                 <strong>Error:</strong> @_errorMessage
@@ -145,36 +215,20 @@
 
 @code {
     private HubConnection? _hubConnection;
-    private string _roomId = Guid.NewGuid().ToString();
+    private string _channelId = "";
     private string _listenerUrl = "";
     private string _qrCodeDataUrl = "";
     private bool _isRecording = false;
+    private bool _isBroadcaster = false;
+    private bool _channelHasBroadcaster = false;
     private IJSObjectReference? _jsModule;
     private string _errorMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
-        _listenerUrl = $"{Navigation.BaseUri}listen/{_roomId}";
-        GenerateQRCode();
-
-        try
-        {
-            Console.WriteLine($"Attempting to connect to SignalR hub at: {Navigation.ToAbsoluteUri("/audiohub")}");
-            
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl(Navigation.ToAbsoluteUri("/audiohub")) // Connect to same origin
-                .Build();
-
-            await _hubConnection.StartAsync();
-            await _hubConnection.InvokeAsync("JoinRoom", _roomId);
-            
-            Console.WriteLine($"Successfully connected to SignalR hub and joined room: {_roomId}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"SignalR connection error: {ex}");
-            _errorMessage = $"Failed to connect to audio hub: {ex.Message}";
-        }
+        // Generate initial random channel ID
+        _channelId = AnimalNameGenerator.GenerateChannelName();
+        UpdateUrls();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -196,13 +250,124 @@
         }
     }
 
+    private void GenerateNewChannelId()
+    {
+        _channelId = AnimalNameGenerator.GenerateChannelName();
+        UpdateUrls();
+        
+        // Rejoin room if connected but not recording
+        if (_hubConnection?.State == HubConnectionState.Connected && !_isRecording)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _hubConnection.InvokeAsync("JoinRoom", _channelId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error rejoining room with new ID: {ex.Message}");
+                }
+            });
+        }
+    }
+
+    private async Task OnChannelIdChanged(ChangeEventArgs e)
+    {
+        var newChannelId = e.Value?.ToString() ?? "";
+        if (_channelId != newChannelId)
+        {
+            _channelId = newChannelId;
+            UpdateUrls();
+            
+            // Rejoin room if connected but not recording
+            if (_hubConnection?.State == HubConnectionState.Connected && !_isRecording && !string.IsNullOrWhiteSpace(_channelId))
+            {
+                try
+                {
+                    await _hubConnection.InvokeAsync("JoinRoom", _channelId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error rejoining room with new ID: {ex.Message}");
+                }
+            }
+        }
+    }
+
+    private void UpdateUrls()
+    {
+        _listenerUrl = $"{Navigation.BaseUri}listen/{_channelId}";
+        GenerateQRCode();
+        StateHasChanged();
+    }
+
     private void GenerateQRCode()
     {
-        using var qrGenerator = new QRCodeGenerator();
-        using var qrCodeData = qrGenerator.CreateQrCode(_listenerUrl, QRCodeGenerator.ECCLevel.Q);
-        using var qrCode = new PngByteQRCode(qrCodeData);
-        var qrCodeBytes = qrCode.GetGraphic(20);
-        _qrCodeDataUrl = $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
+        if (!string.IsNullOrEmpty(_listenerUrl))
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(_listenerUrl, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            var qrCodeBytes = qrCode.GetGraphic(20);
+            _qrCodeDataUrl = $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
+        }
+    }
+
+    private async Task ConnectToHub()
+    {
+        try
+        {
+            _errorMessage = "";
+            Console.WriteLine($"Attempting to connect to SignalR hub at: {Navigation.ToAbsoluteUri("/audiohub")}");
+            
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri("/audiohub"))
+                .Build();
+
+            // Set up event handlers
+            _hubConnection.On<string, bool>("RoomStatus", OnRoomStatusChanged);
+            _hubConnection.On<string, string, bool>("BroadcasterChanged", OnBroadcasterChanged);
+            _hubConnection.On<string>("BroadcastError", OnBroadcastError);
+
+            await _hubConnection.StartAsync();
+            await _hubConnection.InvokeAsync("JoinRoom", _channelId);
+            
+            Console.WriteLine($"Successfully connected to SignalR hub and joined room: {_channelId}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SignalR connection error: {ex}");
+            _errorMessage = $"Failed to connect to audio hub: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task DisconnectFromHub()
+    {
+        try
+        {
+            if (_hubConnection != null)
+            {
+                if (_isBroadcaster)
+                {
+                    await _hubConnection.InvokeAsync("ReleaseBroadcasterRole", _channelId);
+                }
+                await _hubConnection.DisposeAsync();
+                _hubConnection = null;
+            }
+            
+            _isBroadcaster = false;
+            _channelHasBroadcaster = false;
+            _errorMessage = "";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to disconnect: {ex.Message}";
+            StateHasChanged();
+        }
     }
 
     private async Task StartRecording()
@@ -210,7 +375,23 @@
         try
         {
             _errorMessage = "";
+            
+            // Request broadcaster role first
+            if (_hubConnection != null)
+            {
+                var canBroadcast = await _hubConnection.InvokeAsync<bool>("RequestBroadcasterRole", _channelId);
+                if (!canBroadcast)
+                {
+                    _errorMessage = "Another broadcaster is already active on this channel. Please try a different channel.";
+                    StateHasChanged();
+                    return;
+                }
+            }
+            
+            _isBroadcaster = true;
             _isRecording = true;
+            StateHasChanged(); // Refresh the page UI when broadcasting starts
+            
             if (_jsModule != null)
             {
                 await _jsModule.InvokeVoidAsync("startRecording", 
@@ -220,8 +401,9 @@
         catch (Exception ex)
         {
             _errorMessage = $"Failed to start recording: {ex.Message}";
+            _isBroadcaster = false;
             _isRecording = false;
-            StateHasChanged();
+            StateHasChanged(); // Also refresh on error
         }
     }
 
@@ -230,10 +412,19 @@
         try
         {
             _isRecording = false;
+            StateHasChanged();
+            
             if (_jsModule != null)
             {
                 await _jsModule.InvokeVoidAsync("stopRecording");
             }
+            
+            if (_hubConnection != null && _isBroadcaster)
+            {
+                await _hubConnection.InvokeAsync("ReleaseBroadcasterRole", _channelId);
+            }
+            
+            _isBroadcaster = false;
         }
         catch (Exception ex)
         {
@@ -242,23 +433,46 @@
         }
     }
 
+    private void OnRoomStatusChanged(string roomId, bool hasBroadcaster)
+    {
+        if (roomId == _channelId)
+        {
+            _channelHasBroadcaster = hasBroadcaster;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnBroadcasterChanged(string roomId, string connectionId, bool isActive)
+    {
+        if (roomId == _channelId)
+        {
+            _channelHasBroadcaster = isActive;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnBroadcastError(string message)
+    {
+        _errorMessage = message;
+        _isRecording = false;
+        _isBroadcaster = false;
+        InvokeAsync(StateHasChanged);
+    }
+
     [JSInvokable]
     public async Task SendAudioData(string base64AudioData)
     {
         try
         {
-            if (_hubConnection != null && _isRecording && !string.IsNullOrEmpty(base64AudioData))
+            if (_hubConnection != null && _isRecording && _isBroadcaster && !string.IsNullOrEmpty(base64AudioData))
             {
-                // Convert base64 string back to byte array
                 var audioData = Convert.FromBase64String(base64AudioData);
-                await _hubConnection.InvokeAsync("SendAudioChunk", _roomId, audioData);
+                await _hubConnection.InvokeAsync("SendAudioChunk", _channelId, audioData);
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error sending audio data: {ex.Message}");
-            // Don't show UI error for individual audio packets to avoid spam
-            // but log for debugging
         }
     }
 
@@ -266,6 +480,17 @@
     {
         if (_hubConnection != null)
         {
+            if (_isBroadcaster)
+            {
+                try
+                {
+                    await _hubConnection.InvokeAsync("ReleaseBroadcasterRole", _channelId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error releasing broadcaster role during dispose: {ex.Message}");
+                }
+            }
             await _hubConnection.DisposeAsync();
         }
         if (_jsModule != null)
