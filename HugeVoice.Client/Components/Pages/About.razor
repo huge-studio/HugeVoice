@@ -136,7 +136,53 @@
                             </div>
                         </div>
 
-                        @if (_browserInfo.Contains("Safari") || _browserInfo.Contains("iPhone") || _browserInfo.Contains("iPad"))
+                        @if (_browserInfo.Contains("iPhone"))
+                        {
+                            <div class="card bg-warning-subtle border-warning mt-3">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-phone me-2" viewBox="0 0 16 16">
+                                            <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/>
+                                            <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                        </svg>
+                                        ?? iPhone-Specific Setup
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="small mb-2"><strong>iPhones need special audio setup. Follow ALL these steps:</strong></p>
+                                    <ol class="small mb-2">
+                                        <li><strong>Silent Switch:</strong> Check the switch above volume buttons - NO orange should be visible</li>
+                                        <li><strong>Volume Buttons:</strong> Press the UP volume button several times</li>
+                                        <li><strong>Control Center:</strong> Swipe down from top-right, ensure media volume is high</li>
+                                        <li><strong>Test Audio:</strong> Click "Test Audio Playback" above</li>
+                                        <li><strong>Listen Page:</strong> Always tap "?? Enable iPhone Audio" button when listening</li>
+                                    </ol>
+                                    
+                                    <div class="alert alert-info p-2 mt-2 mb-2">
+                                        <small>
+                                            <strong>Still No Sound?</strong>
+                                            <br/>• Try plugging in headphones, then unplug them
+                                            <br/>• Close Safari completely (swipe up, swipe up on Safari)
+                                            <br/>• Disable Low Power Mode: Settings > Battery
+                                            <br/>• Check Do Not Disturb is off
+                                            <br/>• Restart Safari and try again
+                                        </small>
+                                    </div>
+                                    
+                                    <button @onclick="TestIPhoneSpecificAudio" class="btn btn-warning btn-sm w-100">
+                                        ?? iPhone Audio Test
+                                    </button>
+                                    
+                                    @if (!string.IsNullOrEmpty(_iPhoneTestResult))
+                                    {
+                                        <div class="alert @(_iPhoneTestResult.Contains("?") ? "alert-success" : "alert-danger") p-2 mt-2">
+                                            <small>@_iPhoneTestResult</small>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else if (_browserInfo.Contains("Safari") || _browserInfo.Contains("iPad"))
                         {
                             <div class="card bg-warning-subtle border-warning mt-3">
                                 <div class="card-header bg-warning text-dark">
@@ -172,6 +218,7 @@
     private string _browserInfo = "";
     private string _audioContextInfo = "Not tested";
     private string _audioTestError = "";
+    private string _iPhoneTestResult = "";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -183,12 +230,16 @@
                 _browserInfo = await JS.InvokeAsync<string>("eval", "navigator.userAgent");
                 
                 // Extract browser name for display
-                if (_browserInfo.Contains("Chrome") && !_browserInfo.Contains("Edge"))
+                if (_browserInfo.Contains("iPhone"))
+                    _browserInfo = "iPhone Safari";
+                else if (_browserInfo.Contains("iPad"))
+                    _browserInfo = "iPad Safari";
+                else if (_browserInfo.Contains("Chrome") && !_browserInfo.Contains("Edge"))
                     _browserInfo = "Chrome";
                 else if (_browserInfo.Contains("Firefox"))
                     _browserInfo = "Firefox";
                 else if (_browserInfo.Contains("Safari") && !_browserInfo.Contains("Chrome"))
-                    _browserInfo = _browserInfo.Contains("iPhone") || _browserInfo.Contains("iPad") ? "iOS Safari" : "Safari";
+                    _browserInfo = "Safari";
                 else if (_browserInfo.Contains("Edge"))
                     _browserInfo = "Edge";
                 else
@@ -220,7 +271,7 @@
                     _audioContextInfo = "Activated successfully";
                     
                     // Create a simple test tone (440Hz A note for 0.5 seconds)
-                    var testAudioData = GenerateTestTone(440, 0.5, 16000);
+                    var testAudioData = GenerateTestTone(440, 0.5, _browserInfo.Contains("iPhone") ? 44100 : 16000);
                     var base64Audio = Convert.ToBase64String(testAudioData);
                     
                     await _jsModule.InvokeVoidAsync("playAudio", base64Audio);
@@ -245,6 +296,95 @@
         {
             _audioTestError = $"Audio test failed: {ex.Message}";
             _audioContextInfo = "Error";
+            StateHasChanged();
+        }
+    }
+
+    private async Task TestIPhoneSpecificAudio()
+    {
+        try
+        {
+            _iPhoneTestResult = "";
+            
+            if (_jsModule != null)
+            {
+                // iPhone-specific comprehensive test
+                var testResults = new List<string>();
+                
+                // Test 1: Audio context activation
+                var activated = await _jsModule.InvokeAsync<bool>("activateAudioContext");
+                testResults.Add(activated ? "? Audio context activated" : "? Audio context failed");
+                
+                if (activated)
+                {
+                    // Test 2: Get audio context details
+                    var contextState = await JS.InvokeAsync<string>("eval", 
+                        "window.audioContext ? window.audioContext.state : 'no context'");
+                    var sampleRate = await JS.InvokeAsync<string>("eval", 
+                        "window.audioContext ? window.audioContext.sampleRate : 'unknown'");
+                    
+                    testResults.Add($"? Context state: {contextState}");
+                    testResults.Add($"? Sample rate: {sampleRate} Hz");
+                    
+                    // Test 3: Play iPhone-optimized test tone
+                    try
+                    {
+                        var testToneResult = await JS.InvokeAsync<bool>("eval", @"
+                            (function() {
+                                try {
+                                    if (!window.audioContext) return false;
+                                    
+                                    // iPhone-specific test with multiple frequencies
+                                    const oscillator1 = window.audioContext.createOscillator();
+                                    const oscillator2 = window.audioContext.createOscillator();
+                                    const gainNode = window.audioContext.createGain();
+                                    
+                                    oscillator1.frequency.setValueAtTime(523, window.audioContext.currentTime); // C5
+                                    oscillator2.frequency.setValueAtTime(659, window.audioContext.currentTime); // E5
+                                    gainNode.gain.setValueAtTime(0.1, window.audioContext.currentTime);
+                                    
+                                    oscillator1.connect(gainNode);
+                                    oscillator2.connect(gainNode);
+                                    gainNode.connect(window.audioContext.destination);
+                                    
+                                    oscillator1.start(window.audioContext.currentTime);
+                                    oscillator2.start(window.audioContext.currentTime);
+                                    oscillator1.stop(window.audioContext.currentTime + 0.3);
+                                    oscillator2.stop(window.audioContext.currentTime + 0.3);
+                                    
+                                    return true;
+                                } catch (error) {
+                                    console.error('iPhone test tone error:', error);
+                                    return false;
+                                }
+                            })()
+                        ");
+                        
+                        testResults.Add(testToneResult ? "? iPhone test tone played" : "? Test tone failed");
+                        
+                        // Test 4: Volume and device checks
+                        testResults.Add("?? Check: Is volume up? Is silent switch OFF?");
+                        testResults.Add("?? If no sound: Try headphones or restart Safari");
+                        
+                    }
+                    catch (Exception toneEx)
+                    {
+                        testResults.Add($"? Test tone error: {toneEx.Message}");
+                    }
+                }
+                
+                _iPhoneTestResult = string.Join("\n", testResults);
+            }
+            else
+            {
+                _iPhoneTestResult = "? Audio module not loaded";
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _iPhoneTestResult = $"? iPhone test failed: {ex.Message}";
             StateHasChanged();
         }
     }
