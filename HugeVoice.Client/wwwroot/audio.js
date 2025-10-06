@@ -1,5 +1,5 @@
 ﻿// Audio recording and playback functionality for HugeVoice
-// Comprehensive iOS/Safari compatibility with Audio element fallback
+// Enhanced iOS/Safari compatibility with additional safety checks
 
 let mediaRecorder = null;
 let audioContext = null;
@@ -13,132 +13,301 @@ let audioElement = null;
 let isAudioElementUnlocked = false;
 let isWebAudioUnlocked = false;
 
+// State management
+let currentPlaybackSource = null;
+let blobUrlCache = new Set();
+let lastInteractionTime = 0;
+let audioSessionActive = false;
+
 // Enhanced browser/device detection
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isIPhone = /iPhone/.test(navigator.userAgent);
 const isIPad = /iPad/.test(navigator.userAgent);
+const iosVersion = isIOS ? parseFloat((navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/) || [0, 0, 0])[1] + '.' + (navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/) || [0, 0, 0])[2]) : 0;
+const isIOS15Plus = iosVersion >= 15;
+const isIOS17Plus = iosVersion >= 17;
+
+// Additional detection for Safari desktop
+const isMacSafari = isSafari && /Macintosh/.test(navigator.userAgent);
 
 console.log('Audio module loading - Device detection:', {
     isSafari,
     isIOS,
     isIPhone,
     isIPad,
+    iosVersion,
+    isIOS15Plus,
+    isIOS17Plus,
+    isMacSafari,
     userAgent: navigator.userAgent
 });
 
-// Create Audio element for iOS fallback
+// Create Audio element for iOS fallback with better error handling
 function createAudioElement() {
     if (!audioElement) {
         audioElement = new Audio();
         audioElement.preload = 'auto';
         audioElement.crossOrigin = 'anonymous';
-        
+
         // iOS-specific settings
         if (isIOS) {
             audioElement.playsInline = true;
+            audioElement.setAttribute('playsinline', '');
+            audioElement.setAttribute('webkit-playsinline', '');
             audioElement.muted = false;
             audioElement.volume = 1.0;
         }
-        
+
+        // Add error handlers
+        audioElement.addEventListener('error', (e) => {
+            console.error('Audio element error:', e);
+            // Reset unlock state on error
+            if (isIOS) {
+                isAudioElementUnlocked = false;
+            }
+        });
+
+        // Monitor play state changes
+        audioElement.addEventListener('play', () => {
+            console.log('Audio element playing');
+            audioSessionActive = true;
+        });
+
+        audioElement.addEventListener('ended', () => {
+            console.log('Audio element ended');
+            audioSessionActive = false;
+        });
+
         console.log('Audio element created for iOS fallback');
     }
     return audioElement;
 }
 
+// Monitor audio interruptions (iOS)
+if (isIOS) {
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && audioContext) {
+            console.log('Page hidden, suspending audio context');
+            audioContext.suspend();
+        } else if (!document.hidden && audioContext && isAudioContextInitialized) {
+            console.log('Page visible, resuming audio context');
+            audioContext.resume();
+        }
+    });
+
+    // Handle audio session interruptions
+    window.addEventListener('blur', () => {
+        if (audioSessionActive) {
+            console.log('Window blur detected, audio session may be interrupted');
+        }
+    });
+
+    window.addEventListener('focus', async () => {
+        if (audioSessionActive && audioContext && audioContext.state === 'suspended') {
+            console.log('Window focused, attempting to resume audio');
+            await audioContext.resume();
+        }
+    });
+}
+
 export async function startRecording(dotNetReference) {
     dotNetRef = dotNetReference;
-    
+
     try {
         // Ensure audio is unlocked before recording
         await ensureAudioUnlocked();
-        
-        // iPhone-specific audio constraints
+
+        // Check for MediaRecorder support (iOS 15+)
+        const hasMediaRecorder = typeof MediaRecorder !== 'undefined';
+
+        if (!hasMediaRecorder && isIOS) {
+            throw new Error('MediaRecorder not supported on iOS < 15. Please update your iOS version.');
+        }
+
+        // iPhone-specific audio constraints with fallbacks
         const audioConstraints = {
             audio: {
-                channelCount: 1,
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                sampleRate: isIPhone ? 44100 : isIOS ? 22050 : 16000
+                channelCount: { ideal: 1, max: 2 },
+                echoCancellation: { ideal: true },
+                noiseSuppression: { ideal: true },
+                autoGainControl: { ideal: true },
+                sampleRate: { ideal: isIPhone ? 44100 : 16000 }
             }
         };
 
-        const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+        // Try to get user media with fallbacks
+        let stream;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+        } catch (error) {
+            console.warn('Failed with ideal constraints, trying basic:', error);
+            // Fallback to basic constraints
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
 
         // Initialize audio context if not already done
-        if (!audioContext) {
+        if (!audioContext || audioContext.state === 'closed') {
             await initializeAudioContext();
         }
 
+        // Ensure context is running
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
         const source = audioContext.createMediaStreamSource(stream);
-        
-        // Use smaller buffer sizes for iOS
-        const bufferSize = isIPhone ? 1024 : isIOS ? 2048 : 4096;
-        const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
-        
-        processor.onaudioprocess = async function(event) {
+
+        // Use optimal buffer size based on device and iOS version
+        let bufferSize;
+        if (isIPhone && isIOS17Plus) {
+            bufferSize = 256; // iOS 17+ can handle smaller buffers
+        } else if (isIPhone) {
+            bufferSize = 1024;
+        } else if (isIOS) {
+            bufferSize = 2048;
+        } else {
+            bufferSize = 4096;
+        }
+
+        // Create ScriptProcessor with error handling
+        let processor;
+        try {
+            processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+        } catch (error) {
+            console.warn('Failed to create processor with size', bufferSize, 'trying 4096');
+            processor = audioContext.createScriptProcessor(4096, 1, 1);
+        }
+
+        let errorCount = 0;
+        const maxErrors = 5;
+
+        processor.onaudioprocess = async function (event) {
             if (dotNetRef && audioContext.state === 'running') {
                 try {
                     const inputData = event.inputBuffer.getChannelData(0);
+
+                    // Check for silent input (iOS sometimes sends silence)
+                    const sum = inputData.reduce((a, b) => Math.abs(a) + Math.abs(b), 0);
+                    if (sum < 0.01) {
+                        return; // Skip silent frames
+                    }
+
                     const samples = new Int16Array(inputData.length);
-                    
-                    // Convert to 16-bit PCM
+
+                    // Convert to 16-bit PCM with clipping protection
                     for (let i = 0; i < inputData.length; i++) {
                         const sample = Math.max(-1, Math.min(1, inputData[i]));
                         samples[i] = Math.round(sample < 0 ? sample * 0x8000 : sample * 0x7FFF);
                     }
-                    
+
                     const bytes = new Uint8Array(samples.buffer);
                     const base64String = btoa(String.fromCharCode.apply(null, bytes));
-                    
+
                     await dotNetRef.invokeMethodAsync('SendAudioData', base64String);
+                    errorCount = 0; // Reset error count on success
                 } catch (error) {
+                    errorCount++;
                     console.error('Error processing audio data:', error);
+
+                    if (errorCount >= maxErrors) {
+                        console.error('Too many errors, stopping recording');
+                        stopRecording();
+                    }
                 }
             }
         };
 
         source.connect(processor);
         processor.connect(audioContext.destination);
-        
-        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other');
-        
+
+        // Store references for cleanup
+        window.currentAudioStream = stream;
+        window.currentProcessor = processor;
+        window.currentSource = source;
+
+        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other', 'Buffer size:', bufferSize);
+
     } catch (error) {
         console.error('Error starting recording:', error);
+        // Clean up on error
+        if (window.currentAudioStream) {
+            window.currentAudioStream.getTracks().forEach(track => track.stop());
+        }
         throw error;
     }
 }
 
 export function stopRecording() {
+    // Clean up audio nodes
+    if (window.currentProcessor) {
+        window.currentProcessor.disconnect();
+        window.currentProcessor = null;
+    }
+
+    if (window.currentSource) {
+        window.currentSource.disconnect();
+        window.currentSource = null;
+    }
+
+    // Stop media stream
+    if (window.currentAudioStream) {
+        window.currentAudioStream.getTracks().forEach(track => track.stop());
+        window.currentAudioStream = null;
+    }
+
+    // Suspend but don't close context for reuse
     if (audioContext && audioContext.state !== 'closed') {
-        // Don't close the context, just suspend it for reuse
         audioContext.suspend();
     }
+
     dotNetRef = null;
     console.log('Recording stopped');
 }
 
 async function initializeAudioContext() {
     try {
-        // Use optimal sample rate for each device
-        const sampleRate = isIPhone ? 44100 : isIOS ? 22050 : 16000;
-        
-        const contextOptions = {
-            sampleRate: sampleRate,
-            latencyHint: 'interactive'
-        };
-
-        // Always prefer webkitAudioContext on iOS
-        if (isIOS) {
-            audioContext = new (window.webkitAudioContext || window.AudioContext)(contextOptions);
-            console.log('Created webkitAudioContext for iOS');
+        // Detect optimal sample rate
+        let sampleRate;
+        if (isIPhone && isIOS17Plus) {
+            sampleRate = 48000; // iOS 17+ handles 48kHz well
+        } else if (isIPhone) {
+            sampleRate = 44100;
+        } else if (isIOS) {
+            sampleRate = 22050;
         } else {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
+            sampleRate = 16000;
         }
 
-        console.log('Audio context created with sample rate:', audioContext.sampleRate);
-        
+        const contextOptions = {
+            sampleRate: sampleRate,
+            latencyHint: isIOS ? 'playback' : 'interactive'
+        };
+
+        // Create context with proper fallbacks
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+            throw new Error('Web Audio API not supported');
+        }
+
+        // Always prefer webkitAudioContext on iOS for maximum compatibility
+        if (isIOS && window.webkitAudioContext) {
+            audioContext = new window.webkitAudioContext(contextOptions);
+            console.log('Created webkitAudioContext for iOS');
+        } else {
+            audioContext = new AudioContextClass(contextOptions);
+        }
+
+        console.log('Audio context created with sample rate:', audioContext.sampleRate, 'State:', audioContext.state);
+
+        // Monitor state changes
+        if (audioContext.addEventListener) {
+            audioContext.addEventListener('statechange', () => {
+                console.log('Audio context state changed to:', audioContext.state);
+            });
+        }
+
         return true;
     } catch (error) {
         console.error('Error initializing audio context:', error);
@@ -150,34 +319,61 @@ async function initializeAudioContext() {
 export async function activateAudioContext() {
     try {
         console.log('🔊 Activating audio with user interaction...');
-        
+
+        // Track interaction time
+        lastInteractionTime = Date.now();
+
         // Step 1: Initialize audio context if needed
-        if (!audioContext) {
-            await initializeAudioContext();
+        if (!audioContext || audioContext.state === 'closed') {
+            const initialized = await initializeAudioContext();
+            if (!initialized) {
+                console.error('Failed to initialize audio context');
+                return false;
+            }
         }
-        
+
         // Step 2: Resume audio context (MUST be in user gesture)
-        if (audioContext.state === 'suspended') {
+        if (audioContext && audioContext.state === 'suspended') {
             console.log('📱 Resuming suspended audio context...');
-            await audioContext.resume();
-            console.log('✅ Audio context resumed:', audioContext.state);
+
+            // iOS sometimes needs multiple resume attempts
+            let resumeAttempts = 0;
+            while (audioContext.state === 'suspended' && resumeAttempts < 3) {
+                await audioContext.resume();
+                resumeAttempts++;
+
+                if (audioContext.state === 'suspended') {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+
+            console.log('✅ Audio context state after resume:', audioContext.state);
         }
-        
+
         // Step 3: Unlock Web Audio API (MUST be in user gesture)
         await unlockWebAudio();
-        
+
         // Step 4: Unlock Audio element (MUST be in user gesture)  
         await unlockAudioElement();
-        
+
+        // Step 5: Setup Media Session API for iOS control center (iOS 15+)
+        if ('mediaSession' in navigator && isIOS15Plus) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: 'HugeVoice Audio',
+                artist: 'HugeVoice',
+                album: 'Audio Stream'
+            });
+        }
+
         isAudioContextInitialized = true;
         console.log('🎉 Audio fully activated! WebAudio:', isWebAudioUnlocked, 'AudioElement:', isAudioElementUnlocked);
-        
+
         // Process any queued audio
         if (pendingAudioQueue.length > 0) {
             console.log('🎵 Processing', pendingAudioQueue.length, 'queued audio buffers...');
             processAudioQueue();
         }
-        
+
         return true;
     } catch (error) {
         console.error('❌ Error activating audio context:', error);
@@ -188,110 +384,187 @@ export async function activateAudioContext() {
 // CRITICAL: Must be called directly in user gesture - no async/await delays
 async function unlockWebAudio() {
     if (isWebAudioUnlocked || !audioContext) return;
-    
+
     try {
         console.log('🔓 Unlocking Web Audio API...');
-        
+
+        // iOS 17+ needs fewer unlock attempts
+        const unlockAttempts = isIOS17Plus ? 2 : 5;
+
         // Create multiple silent buffers to ensure unlock
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < unlockAttempts; i++) {
             const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
             const source = audioContext.createBufferSource();
             source.buffer = buffer;
-            
-            // Use very quiet but not completely silent audio
+
+            // iOS needs non-zero gain
             const gainNode = audioContext.createGain();
             gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
-            
+
             source.connect(gainNode);
             gainNode.connect(audioContext.destination);
-            source.start(audioContext.currentTime);
-            
-            // No delays - iOS requires immediate execution
+
+            // Start immediately
+            source.start(0);
+            source.stop(audioContext.currentTime + 0.001);
         }
-        
-        // Additional unlock attempt with oscillator
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.01);
-        
+
+        // Additional unlock with oscillator (works better on some iOS versions)
+        if (!isIOS17Plus) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.01);
+        }
+
         isWebAudioUnlocked = true;
         console.log('✅ Web Audio API unlocked');
-        
+
     } catch (error) {
         console.error('❌ Error unlocking Web Audio API:', error);
+        isWebAudioUnlocked = false;
     }
 }
 
 // CRITICAL: Must be called directly in user gesture
 async function unlockAudioElement() {
     if (isAudioElementUnlocked) return;
-    
+
     try {
         console.log('🔓 Unlocking Audio element...');
-        
+
         // Create audio element if not exists
         createAudioElement();
-        
-        // Create a tiny silent audio file as blob
-        const audioBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
-        
-        // Convert to WAV blob for Audio element
-        const wav = audioBufferToWav(audioBuffer);
-        const blob = new Blob([wav], { type: 'audio/wav' });
-        const url = URL.createObjectURL(blob);
-        
-        // Play through Audio element to unlock it
-        audioElement.src = url;
-        
-        // CRITICAL: play() must be called directly in user gesture
-        const playPromise = audioElement.play();
-        
-        if (playPromise !== undefined) {
+
+        // iOS 15+ can use simpler unlock
+        if (isIOS15Plus) {
+            // Use data URI for maximum compatibility
+            audioElement.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAA=';
+            audioElement.volume = 0.01;
+
             try {
-                await playPromise;
+                await audioElement.play();
                 audioElement.pause();
                 audioElement.currentTime = 0;
+                isAudioElementUnlocked = true;
+                console.log('✅ Audio element unlocked (iOS 15+ method)');
+                return;
+            } catch (error) {
+                console.log('iOS 15+ unlock failed, trying legacy method');
+            }
+        }
+
+        // Legacy unlock method for older iOS
+        if (audioContext) {
+            // Create a tiny silent audio file as blob
+            const audioBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+
+            // Convert to WAV blob for Audio element
+            const wav = audioBufferToWav(audioBuffer);
+            const blob = new Blob([wav], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+
+            // Track blob URL for cleanup
+            blobUrlCache.add(url);
+
+            // Play through Audio element to unlock it
+            audioElement.src = url;
+            audioElement.volume = 0.01;
+
+            // CRITICAL: play() must be called directly in user gesture
+            try {
+                const playPromise = audioElement.play();
+
+                if (playPromise !== undefined) {
+                    await playPromise;
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                }
+
+                isAudioElementUnlocked = true;
                 console.log('✅ Audio element unlocked via play()');
             } catch (playError) {
                 console.log('⚠️ Audio element play failed:', playError.name);
+                isAudioElementUnlocked = false;
             }
+
+            // Schedule cleanup
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                blobUrlCache.delete(url);
+            }, 1000);
         }
-        
-        // Clean up blob URL
-        URL.revokeObjectURL(url);
-        
-        isAudioElementUnlocked = true;
-        
+
     } catch (error) {
         console.error('❌ Error unlocking Audio element:', error);
+        isAudioElementUnlocked = false;
     }
 }
 
 // Ensure both Web Audio and Audio element are unlocked
 async function ensureAudioUnlocked() {
+    // Check if we've had a recent interaction
+    const timeSinceInteraction = Date.now() - lastInteractionTime;
+    const needsRefresh = timeSinceInteraction > 30000; // 30 seconds
+
+    if (needsRefresh && isIOS) {
+        console.log('⚠️ Audio unlock may have expired, needs refresh');
+        isWebAudioUnlocked = false;
+        isAudioElementUnlocked = false;
+    }
+
     if (!isWebAudioUnlocked || !isAudioElementUnlocked) {
         console.log('⚠️ Audio not fully unlocked, waiting for user interaction...');
         return false;
     }
+
+    // Additional check for audio context state
+    if (audioContext && audioContext.state === 'suspended') {
+        console.log('⚠️ Audio context suspended, needs user interaction');
+        return false;
+    }
+
     return true;
 }
 
 export async function playAudio(audioData) {
     try {
+        // Check if we have valid audio data
+        if (!audioData) {
+            console.error('No audio data provided');
+            return;
+        }
+
         // If not fully unlocked, queue the audio
         if (!isAudioContextInitialized || !audioContext || audioContext.state !== 'running') {
             console.log('🔄 Audio not ready, queuing audio data. Context state:', audioContext?.state);
             pendingAudioQueue.push(audioData);
+
+            // Limit queue size to prevent memory issues
+            if (pendingAudioQueue.length > 50) {
+                console.warn('Audio queue overflow, dropping oldest items');
+                pendingAudioQueue = pendingAudioQueue.slice(-30);
+            }
+
             return;
         }
 
+        // Stop any current playback if needed
+        if (currentPlaybackSource) {
+            try {
+                currentPlaybackSource.stop();
+            } catch (e) {
+                // Already stopped
+            }
+            currentPlaybackSource = null;
+        }
+
         // Try Web Audio API first, fallback to Audio element
-        if (isWebAudioUnlocked) {
+        if (isWebAudioUnlocked && audioContext.state === 'running') {
             await playAudioWithWebAudio(audioData);
         } else if (isAudioElementUnlocked) {
             await playAudioWithAudioElement(audioData);
@@ -299,12 +572,14 @@ export async function playAudio(audioData) {
             // Queue for later when unlocked
             pendingAudioQueue.push(audioData);
         }
-        
+
     } catch (error) {
         console.error('❌ Error playing audio:', error);
+
         // Try fallback method
-        if (isAudioElementUnlocked) {
+        if (isAudioElementUnlocked && audioElement) {
             try {
+                console.log('Attempting fallback audio playback');
                 await playAudioWithAudioElement(audioData);
             } catch (fallbackError) {
                 console.error('❌ Fallback audio playback failed:', fallbackError);
@@ -318,6 +593,11 @@ export async function playAudio(audioData) {
 
 async function playAudioWithWebAudio(audioData) {
     try {
+        // Verify context is ready
+        if (!audioContext || audioContext.state !== 'running') {
+            throw new Error('Audio context not running');
+        }
+
         // Convert base64 to byte array
         const binaryString = atob(audioData);
         const bytes = new Uint8Array(binaryString.length);
@@ -326,8 +606,13 @@ async function playAudioWithWebAudio(audioData) {
         }
 
         const samples = new Int16Array(bytes.buffer);
-        
-        // Convert to float samples - let browser handle resampling
+
+        // Check for valid audio data
+        if (samples.length === 0) {
+            throw new Error('Empty audio data');
+        }
+
+        // Convert to float samples
         const floatSamples = new Float32Array(samples.length);
         for (let i = 0; i < samples.length; i++) {
             floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
@@ -340,18 +625,35 @@ async function playAudioWithWebAudio(audioData) {
         // Create buffer source
         const source = audioContext.createBufferSource();
         source.buffer = audioBuffer;
-        
-        // Apply gain
+
+        // Store reference for cleanup
+        currentPlaybackSource = source;
+
+        // Apply gain with iOS-specific adjustments
         const gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(isIPhone ? 1.2 : 1.0, audioContext.currentTime);
-        
+        let gainValue = 1.0;
+
+        if (isIPhone && !isIOS17Plus) {
+            gainValue = 1.2; // Older iPhones need boost
+        } else if (isIPad) {
+            gainValue = 1.1; // iPads slightly quieter
+        }
+
+        gainNode.gain.setValueAtTime(gainValue, audioContext.currentTime);
+
         source.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
+        // Add ended handler for cleanup
+        source.onended = () => {
+            currentPlaybackSource = null;
+            console.log('Web Audio playback ended');
+        };
+
         source.start(0);
-        
-        console.log('🎵 Web Audio playback - Length:', floatSamples.length);
-        
+
+        console.log('🎵 Web Audio playback - Length:', floatSamples.length, 'Gain:', gainValue);
+
     } catch (error) {
         console.error('❌ Web Audio playback error:', error);
         throw error;
@@ -364,6 +666,13 @@ async function playAudioWithAudioElement(audioData) {
             createAudioElement();
         }
 
+        // Check element state
+        if (audioElement.error) {
+            console.log('Audio element has error, recreating');
+            audioElement = null;
+            createAudioElement();
+        }
+
         // Convert base64 to byte array
         const binaryString = atob(audioData);
         const bytes = new Uint8Array(binaryString.length);
@@ -372,100 +681,136 @@ async function playAudioWithAudioElement(audioData) {
         }
 
         const samples = new Int16Array(bytes.buffer);
-        
+
+        // Check for valid audio data
+        if (samples.length === 0) {
+            throw new Error('Empty audio data');
+        }
+
         // Convert to float samples
         const floatSamples = new Float32Array(samples.length);
         for (let i = 0; i < samples.length; i++) {
             floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
         }
 
-        // Create audio buffer for WAV conversion
+        // Create temporary context if needed
         const tempContext = audioContext || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
         const audioBuffer = tempContext.createBuffer(1, floatSamples.length, 16000);
         audioBuffer.getChannelData(0).set(floatSamples);
-        
+
         // Convert to WAV blob
         const wav = audioBufferToWav(audioBuffer);
         const blob = new Blob([wav], { type: 'audio/wav' });
         const url = URL.createObjectURL(blob);
-        
-        // Play through Audio element
+
+        // Track blob URL for cleanup
+        blobUrlCache.add(url);
+
+        // Set source and volume
         audioElement.src = url;
-        
+        audioElement.volume = isIPhone ? 1.0 : 0.9;
+
         return new Promise((resolve, reject) => {
+            let playAttempts = 0;
+            const maxAttempts = 3;
+
             const cleanup = () => {
                 URL.revokeObjectURL(url);
+                blobUrlCache.delete(url);
                 audioElement.removeEventListener('ended', onEnded);
                 audioElement.removeEventListener('error', onError);
             };
-            
+
             const onEnded = () => {
+                console.log('Audio element playback ended');
                 cleanup();
                 resolve();
             };
-            
+
             const onError = (error) => {
+                console.error('Audio element error:', error);
                 cleanup();
                 reject(error);
             };
-            
-            audioElement.addEventListener('ended', onEnded);
-            audioElement.addEventListener('error', onError);
-            
-            const playPromise = audioElement.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(reject);
-            }
+
+            const attemptPlay = async () => {
+                try {
+                    audioElement.addEventListener('ended', onEnded, { once: true });
+                    audioElement.addEventListener('error', onError, { once: true });
+
+                    const playPromise = audioElement.play();
+                    if (playPromise !== undefined) {
+                        await playPromise;
+                        console.log('🎵 Audio element playback started');
+                    }
+                } catch (playError) {
+                    playAttempts++;
+                    console.error(`Play attempt ${playAttempts} failed:`, playError);
+
+                    if (playAttempts < maxAttempts) {
+                        // Wait and retry
+                        setTimeout(attemptPlay, 100);
+                    } else {
+                        cleanup();
+                        reject(playError);
+                    }
+                }
+            };
+
+            attemptPlay();
         });
-        
-        console.log('🎵 Audio element playback - Length:', floatSamples.length);
-        
+
     } catch (error) {
         console.error('❌ Audio element playback error:', error);
         throw error;
     }
 }
 
-// Convert AudioBuffer to WAV format
+// Convert AudioBuffer to WAV format with better error handling
 function audioBufferToWav(buffer) {
-    const length = buffer.length;
-    const numberOfChannels = buffer.numberOfChannels;
-    const sampleRate = buffer.sampleRate;
-    const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
-    const view = new DataView(arrayBuffer);
-    
-    // WAV header
-    const writeString = (offset, string) => {
-        for (let i = 0; i < string.length; i++) {
-            view.setUint8(offset + i, string.charCodeAt(i));
+    try {
+        const length = buffer.length;
+        const numberOfChannels = buffer.numberOfChannels;
+        const sampleRate = buffer.sampleRate;
+        const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
+        const view = new DataView(arrayBuffer);
+
+        // WAV header
+        const writeString = (offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numberOfChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+        view.setUint16(32, numberOfChannels * 2, true);
+        view.setUint16(34, 16, true);
+        writeString(36, 'data');
+        view.setUint32(40, length * numberOfChannels * 2, true);
+
+        // Convert float samples to 16-bit PCM
+        let offset = 44;
+        for (let i = 0; i < length; i++) {
+            for (let channel = 0; channel < numberOfChannels; channel++) {
+                const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+                view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                offset += 2;
+            }
         }
-    };
-    
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + length * numberOfChannels * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, numberOfChannels, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * numberOfChannels * 2, true);
-    view.setUint16(32, numberOfChannels * 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, length * numberOfChannels * 2, true);
-    
-    // Convert float samples to 16-bit PCM
-    let offset = 44;
-    for (let i = 0; i < length; i++) {
-        for (let channel = 0; channel < numberOfChannels; channel++) {
-            const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
-            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-            offset += 2;
-        }
+
+        return arrayBuffer;
+    } catch (error) {
+        console.error('Error converting to WAV:', error);
+        throw error;
     }
-    
-    return arrayBuffer;
 }
 
 async function processAudioQueue() {
@@ -476,76 +821,153 @@ async function processAudioQueue() {
     isProcessingQueue = true;
     console.log(`🔄 Processing ${pendingAudioQueue.length} queued audio buffers...`);
 
-    while (pendingAudioQueue.length > 0) {
+    const processedCount = 0;
+    const maxProcessPerRun = 10; // Limit processing to prevent UI blocking
+
+    while (pendingAudioQueue.length > 0 && processedCount < maxProcessPerRun) {
         const audioData = pendingAudioQueue.shift();
         try {
-            if (isWebAudioUnlocked) {
+            if (isWebAudioUnlocked && audioContext.state === 'running') {
                 await playAudioWithWebAudio(audioData);
             } else if (isAudioElementUnlocked) {
                 await playAudioWithAudioElement(audioData);
             }
-            
-            // Small delay to prevent overwhelming the audio system
-            await new Promise(resolve => setTimeout(resolve, isIPhone ? 20 : 10));
+
+            // Adaptive delay based on device
+            const delay = isIPhone ? 20 : isIOS ? 15 : 10;
+            await new Promise(resolve => setTimeout(resolve, delay));
         } catch (error) {
             console.error('❌ Error processing queued audio:', error);
+
+            // Re-queue on error if we haven't tried too many times
+            if (audioData._retryCount === undefined) {
+                audioData._retryCount = 0;
+            }
+
+            if (audioData._retryCount < 3) {
+                audioData._retryCount++;
+                pendingAudioQueue.push(audioData);
+            }
         }
     }
 
     isProcessingQueue = false;
-    console.log('✅ Finished processing audio queue');
+
+    // Schedule next batch if more items
+    if (pendingAudioQueue.length > 0) {
+        setTimeout(() => processAudioQueue(), 100);
+    }
+
+    console.log('✅ Processed audio batch, remaining in queue:', pendingAudioQueue.length);
+}
+
+// Cleanup function for memory management
+export function cleanup() {
+    // Stop recording if active
+    stopRecording();
+
+    // Clean up blob URLs
+    blobUrlCache.forEach(url => {
+        URL.revokeObjectURL(url);
+    });
+    blobUrlCache.clear();
+
+    // Clear audio queue
+    pendingAudioQueue = [];
+
+    // Close audio context if needed
+    if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close();
+    }
+
+    // Remove audio element
+    if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+        audioElement = null;
+    }
+
+    console.log('Audio module cleaned up');
 }
 
 // Enhanced user interaction handling for iOS
 if (typeof window !== 'undefined') {
     console.log('🎧 Audio module loaded for', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other');
-    
-    // CRITICAL: These event listeners unlock audio on EVERY interaction
+
+    // CRITICAL: These event listeners unlock audio on user interaction
     const unlockEvents = ['touchstart', 'touchend', 'mousedown', 'keydown', 'click'];
-    
+
+    let unlockInProgress = false;
+
     const unlockAudio = async (event) => {
+        // Prevent multiple simultaneous unlocks
+        if (unlockInProgress) return;
+
         // Always try to unlock on iOS, even if previously unlocked
         if (isIOS || !isAudioContextInitialized) {
+            unlockInProgress = true;
             console.log('👆 User gesture detected (' + event.type + '), unlocking audio...');
-            
+
             try {
                 // CRITICAL: Call activateAudioContext directly in the event handler
                 const success = await activateAudioContext();
                 console.log('🔊 Audio unlock result:', success ? '✅ Success' : '❌ Failed');
-                
+
                 // On non-iOS, remove listeners after first success
                 if (success && !isIOS) {
                     unlockEvents.forEach(eventType => {
-                        document.removeEventListener(eventType, unlockAudio, true);
+                        document.removeEventListener(eventType, unlockAudio, { capture: true, passive: false });
                     });
                 }
             } catch (error) {
                 console.error('❌ Error in unlock handler:', error);
+            } finally {
+                unlockInProgress = false;
             }
         }
     };
-    
-    // Add listeners with capture=true for maximum compatibility
+
+    // Add listeners with options for maximum compatibility
     unlockEvents.forEach(event => {
-        document.addEventListener(event, unlockAudio, true);
+        document.addEventListener(event, unlockAudio, { capture: true, passive: false });
     });
-    
+
     // iOS-specific: Additional unlock attempts
     if (isIOS) {
         // Try to unlock when page becomes visible
         document.addEventListener('visibilitychange', async () => {
             if (!document.hidden) {
-                console.log('📱 Page became visible, checking audio unlock...');
-                if (!isAudioContextInitialized) {
-                    console.log('⚠️ Audio not unlocked, waiting for user gesture...');
+                console.log('📱 Page became visible');
+
+                // Resume audio context if it was suspended
+                if (audioContext && audioContext.state === 'suspended' && isAudioContextInitialized) {
+                    try {
+                        await audioContext.resume();
+                        console.log('Resumed audio context after visibility change');
+                    } catch (error) {
+                        console.error('Failed to resume audio context:', error);
+                    }
                 }
             }
         });
-        
-        // Try to unlock on focus
-        window.addEventListener('focus', async () => {
-            if (!isAudioContextInitialized) {
-                console.log('🔍 Window focused, audio needs user gesture...');
+
+        // Monitor page lifecycle
+        if ('onpageshow' in window) {
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) {
+                    console.log('Page restored from cache');
+                    // Reset unlock states as they may be invalid
+                    isWebAudioUnlocked = false;
+                    isAudioElementUnlocked = false;
+                    isAudioContextInitialized = false;
+                }
+            });
+        }
+
+        // Handle beforeunload for cleanup
+        window.addEventListener('beforeunload', () => {
+            if (audioContext) {
+                audioContext.close();
             }
         });
     }

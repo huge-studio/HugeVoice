@@ -1,7 +1,7 @@
 @page "/listen/{RoomId}"
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.JSInterop
-@using QRCoder  
+@using QRCoder
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -65,7 +65,7 @@
                                 <div class="alert alert-success mb-3">
                                     <div class="d-flex align-items-start">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-broadcast me-2 flex-shrink-0" viewBox="0 0 16 16">
-                                            <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zM2.343 4.343a5 5 0 0 0 0 7.314.5.5 0 0 1-.707.707 6 6 0 0 1 0-8.485.5.5 0 0 1 .707.707zM1.636 5.636a3 3 0 0 0 0 4.243.5.5 0 0 1-.707.707 4 4 0 0 1 0-5.243.5.5 0 0 1 .707.707zM10.243 8a2 2 0 1 1-3.86.88 2 2 0 0 1 3.86-.88zM13.657 2.343a.5.5 0 0 1 0 .707 7 7 0 0 1 0 9.9.5.5 0 1 1-.707-.707 6 6 0 0 0 0-8.486.5.5 0 0 1 0-.707zm-.707.707a.5.5 0 0 1 0 .707 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.707zm-.707.707a.5.5 0 0 1 0 .707 3 3 0 0 1 0 4.243.5.5 0 1 1-.708-.708 2 2 0 0 0 0-2.828.5.5 0 0 1 0-.707z"/>
+                                            <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM8 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
                                         </svg>
                                         <div>
                                             <strong>
@@ -200,8 +200,8 @@
             <div class="alert alert-danger mt-3">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
                     <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-            </svg>
-            <strong>Error:</strong> @_errorMessage
+                </svg>
+                <strong>Error:</strong> @_errorMessage
             </div>
         }
 
@@ -247,51 +247,6 @@
     </div>
 }
 
-<style>
-    .qr-popup-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.9);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        cursor: pointer;
-    }
-
-    .qr-popup-content {
-        max-width: 90vw;
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        cursor: default;
-    }
-
-    .qr-popup-image {
-        max-width: 80vmin;
-        max-height: 80vmin;
-        width: auto;
-        height: auto;
-        border: 8px solid white;
-        border-radius: 16px;
-        box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
-    }
-
-    @@media (max-width: 576px) {
-        .qr-popup-image {
-            max-width: 85vw;
-            max-height: 85vw;
-            border: 4px solid white;
-            border-radius: 12px;
-        }
-    }
-</style>
-
 @code {
     [Parameter]
     public string RoomId { get; set; } = "";
@@ -307,15 +262,55 @@
     private string _qrCodeDataUrl = "";
     private string _errorMessage = "";
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        _listenerUrl = $"{Navigation.BaseUri}listen/{RoomId}";
-        GenerateQRCode();
+        // Clean up existing connection if room changed
+        if (_hubConnection != null)
+        {
+            await _hubConnection.DisposeAsync();
+            _hubConnection = null;
+            _isConnected = false;
+            _isListening = false;
+        }
 
+        // Only connect if we have a valid RoomId
+        if (!string.IsNullOrEmpty(RoomId))
+        {
+            _listenerUrl = $"{Navigation.BaseUri}listen/{RoomId}";
+            GenerateQRCode();
+            await ConnectToRoom();
+        }
+    }
+
+    private void GenerateQRCode()
+    {
         try
         {
+            if (string.IsNullOrEmpty(_listenerUrl))
+                return;
+
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(_listenerUrl, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            var qrCodeBytes = qrCode.GetGraphic(20);
+            _qrCodeDataUrl = $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating QR code: {ex.Message}");
+        }
+    }
+
+    private async Task ConnectToRoom()
+    {
+        try
+        {
+            _errorMessage = "";
+            var hubUrl = Navigation.ToAbsoluteUri("/audiohub");
+            Console.WriteLine($"Connecting to SignalR hub at: {hubUrl} for room: {RoomId}");
+            
             _hubConnection = new HubConnectionBuilder()
-                .WithUrl(Navigation.ToAbsoluteUri("/audiohub"))
+                .WithUrl(hubUrl)
                 .Build();
 
             // Handle incoming audio
@@ -366,14 +361,16 @@
             });
 
             await _hubConnection.StartAsync();
-            await _hubConnection.InvokeAsync("JoinRoom", RoomId, false);
+            await _hubConnection.InvokeAsync("JoinRoom", RoomId, false); // false = listener
             
             _isConnected = true;
+            Console.WriteLine($"Successfully connected and joined room: {RoomId}");
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Failed to connect to audio stream: {ex.Message}";
+            Console.WriteLine($"Failed to connect to room {RoomId}: {ex.Message}");
+            _errorMessage = $"Failed to connect: {ex.Message}";
             StateHasChanged();
         }
     }
@@ -429,11 +426,22 @@
         }
     }
 
-    private void StopListening()
+    private async Task StopListening()
     {
-        _isListening = false;
-        StateHasChanged();
-        Console.WriteLine("Audio listening stopped");
+        try
+        {
+            _isListening = false;
+            StateHasChanged();
+            
+            if (_jsModule != null)
+            {
+                await _jsModule.InvokeVoidAsync("deactivateAudioContext");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to stop listening: {ex.Message}");
+        }
     }
 
     private void ShowQRCodePopup()
@@ -446,15 +454,6 @@
     {
         _showQRPopup = false;
         StateHasChanged();
-    }
-
-    private void GenerateQRCode()
-    {
-        using var qrGenerator = new QRCodeGenerator();
-        using var qrCodeData = qrGenerator.CreateQrCode(_listenerUrl, QRCodeGenerator.ECCLevel.Q);
-        using var qrCode = new PngByteQRCode(qrCodeData);
-        var qrCodeBytes = qrCode.GetGraphic(20);
-        _qrCodeDataUrl = $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
     }
 
     public async ValueTask DisposeAsync()
