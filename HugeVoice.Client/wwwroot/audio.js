@@ -1,6 +1,7 @@
 ﻿// Audio recording and playback functionality for HugeVoice
 // Enhanced iOS/Safari compatibility with additional safety checks
 // DSP powered by libsamplerate.js for high-quality audio resampling
+// Audio processing offloaded to Web Worker for better performance
 
 let mediaRecorder = null;
 let audioContext = null;
@@ -9,7 +10,11 @@ let isAudioContextInitialized = false;
 let pendingAudioQueue = [];
 let isProcessingQueue = false;
 
-// libsamplerate.js integration
+// Web Worker for audio processing
+let audioWorker = null;
+let workerInitialized = false;
+
+// libsamplerate.js integration (for playback only, recording uses worker)
 let libsamplerate = null;
 let resamplerInstance = null;
 const TARGET_SAMPLE_RATE = 16000; // Target rate for transmission
@@ -49,12 +54,56 @@ console.log('Audio module loading - Device detection:', {
     userAgent: navigator.userAgent
 });
 
-// Initialize libsamplerate
+// Initialize Web Worker for audio processing
+async function initializeAudioWorker() {
+    if (audioWorker && workerInitialized) return true;
+    
+    try {
+        console.log('🔧 Initializing audio processing worker...');
+        
+        audioWorker = new Worker('audio-processor.worker.js');
+        
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Worker initialization timeout'));
+            }, 5000);
+
+            audioWorker.onmessage = function(e) {
+                const { type, success, error } = e.data;
+                
+                if (type === 'init-complete') {
+                    clearTimeout(timeout);
+                    workerInitialized = success;
+                    if (success) {
+                        console.log('✅ Audio worker initialized successfully');
+                        resolve(true);
+                    } else {
+                        reject(new Error('Worker initialization failed'));
+                    }
+                }
+            };
+
+            audioWorker.onerror = function(error) {
+                clearTimeout(timeout);
+                console.error('❌ Audio worker error:', error);
+                reject(error);
+            };
+
+            // Initialize the worker
+            audioWorker.postMessage({ type: 'init' });
+        });
+    } catch (error) {
+        console.error('❌ Failed to initialize audio worker:', error);
+        throw error;
+    }
+}
+
+// Initialize libsamplerate (for playback only)
 async function initializeLibsamplerate() {
     if (libsamplerate) return true;
     
     try {
-        console.log('🎛️ Initializing libsamplerate.js for DSP...');
+        console.log('🎛️ Initializing libsamplerate.js for playback...');
         
         // Import libsamplerate module
         if (typeof LibSampleRate !== 'undefined') {
@@ -77,9 +126,9 @@ function createResampler(fromRate, toRate, channels = 1) {
     }
     
     try {
-        // Create resampler with SRC_SINC_MEDIUM_QUALITY converter type
+        // Create resampler with SRC_SINC_FASTEST converter type
         // Available types: SRC_SINC_BEST_QUALITY, SRC_SINC_MEDIUM_QUALITY, SRC_SINC_FASTEST, SRC_ZERO_ORDER_HOLD, SRC_LINEAR
-        const converterType = libsamplerate.SRC_SINC_MEDIUM_QUALITY; // Balance between quality and performance
+        const converterType = libsamplerate.SRC_SINC_FASTEST; // Fastest sinc interpolation for real-time performance
         const resampler = libsamplerate.create(channels, fromRate, toRate, {
             converterType: converterType
         });
@@ -92,7 +141,7 @@ function createResampler(fromRate, toRate, channels = 1) {
     }
 }
 
-// Resample audio data using libsamplerate
+// Resample audio data using libsamplerate (for playback only)
 function resampleAudio(inputData, fromRate, toRate) {
     if (fromRate === toRate) {
         return inputData; // No resampling needed
@@ -105,7 +154,7 @@ function resampleAudio(inputData, fromRate, toRate) {
     try {
         // Use libsamplerate for high-quality resampling
         const outputData = libsamplerate.simple(inputData, fromRate, toRate, {
-            converterType: libsamplerate.SRC_SINC_MEDIUM_QUALITY
+            converterType: libsamplerate.SRC_SINC_FASTEST
         });
         return outputData;
     } catch (error) {
@@ -186,7 +235,10 @@ export async function startRecording(dotNetReference) {
     dotNetRef = dotNetReference;
 
     try {
-        // Initialize libsamplerate
+        // Initialize audio worker for processing
+        await initializeAudioWorker();
+        
+        // Initialize libsamplerate for playback
         await initializeLibsamplerate();
         
         // Ensure audio is unlocked before recording
@@ -233,12 +285,7 @@ export async function startRecording(dotNetReference) {
         const source = audioContext.createMediaStreamSource(stream);
         const sourceSampleRate = audioContext.sampleRate;
         
-        console.log(`🎤 Recording setup: ${sourceSampleRate}Hz → ${TARGET_SAMPLE_RATE}Hz`);
-
-        // Create resampler if rates differ
-        if (sourceSampleRate !== TARGET_SAMPLE_RATE) {
-            resamplerInstance = createResampler(sourceSampleRate, TARGET_SAMPLE_RATE, 1);
-        }
+        console.log(`🎤 Recording setup: ${sourceSampleRate}Hz → ${TARGET_SAMPLE_RATE}Hz (Web Worker)`);
 
         // Use optimal buffer size based on device and iOS version
         let bufferSize;
@@ -263,44 +310,79 @@ export async function startRecording(dotNetReference) {
 
         let errorCount = 0;
         const maxErrors = 5;
+        let processingQueue = [];
+        let isProcessingWorkerMessage = false;
 
-        processor.onaudioprocess = async function (event) {
-            if (dotNetRef && audioContext.state === 'running') {
-                try {
-                    const inputData = event.inputBuffer.getChannelData(0);
-
-                    // Check for silent input (iOS sometimes sends silence)
-                    const sum = inputData.reduce((a, b) => Math.abs(a) + Math.abs(b), 0);
-                    if (sum < 0.01) {
-                        return; // Skip silent frames
+        // Setup worker message handler
+        audioWorker.onmessage = async function(e) {
+            const { type, result, error } = e.data;
+            
+            if (type === 'processed') {
+                if (!result.silent && dotNetRef) {
+                    try {
+                        await dotNetRef.invokeMethodAsync('SendAudioData', result.base64Audio);
+                        errorCount = 0; // Reset error count on success
+                    } catch (error) {
+                        errorCount++;
+                        console.error('Error sending audio data to .NET:', error);
+                        
+                        if (errorCount >= maxErrors) {
+                            console.error('Too many errors, stopping recording');
+                            stopRecording();
+                        }
                     }
+                }
+                
+                // Process next item in queue
+                if (processingQueue.length > 0) {
+                    const nextItem = processingQueue.shift();
+                    audioWorker.postMessage({
+                        type: 'process',
+                        data: nextItem
+                    });
+                } else {
+                    isProcessingWorkerMessage = false;
+                }
+            } else if (type === 'error') {
+                console.error('Worker processing error:', error);
+                errorCount++;
+                
+                if (errorCount >= maxErrors) {
+                    console.error('Too many worker errors, stopping recording');
+                    stopRecording();
+                } else {
+                    isProcessingWorkerMessage = false;
+                }
+            }
+        };
 
-                    // Resample audio using libsamplerate if needed
-                    let processedData = inputData;
-                    if (sourceSampleRate !== TARGET_SAMPLE_RATE) {
-                        processedData = resampleAudio(inputData, sourceSampleRate, TARGET_SAMPLE_RATE);
+        processor.onaudioprocess = function (event) {
+            if (dotNetRef && audioContext.state === 'running' && workerInitialized) {
+                const inputData = event.inputBuffer.getChannelData(0);
+                
+                // Create transferable copy of audio data
+                const audioDataCopy = new Float32Array(inputData);
+                
+                const workerMessage = {
+                    audioData: audioDataCopy,
+                    sampleRate: sourceSampleRate
+                };
+                
+                if (isProcessingWorkerMessage) {
+                    // Queue if worker is busy
+                    processingQueue.push(workerMessage);
+                    
+                    // Limit queue size
+                    if (processingQueue.length > 10) {
+                        processingQueue.shift(); // Drop oldest
                     }
-
-                    // Convert to 16-bit PCM with clipping protection
-                    const samples = new Int16Array(processedData.length);
-                    for (let i = 0; i < processedData.length; i++) {
-                        const sample = Math.max(-1, Math.min(1, processedData[i]));
-                        samples[i] = Math.round(sample < 0 ? sample * 0x8000 : sample * 0x7FFF);
-                    }
-
-                    const bytes = new Uint8Array(samples.buffer);
-                    const base64String = btoa(String.fromCharCode.apply(null, bytes));
-
-                    await dotNetRef.invokeMethodAsync('SendAudioData', base64String);
-                    errorCount = 0; // Reset error count on success
-                } catch (error) {
-                    errorCount++;
-                    console.error('Error processing audio data:', error);
-
-                    if (errorCount >= maxErrors) {
-                        console.error('Too many errors, stopping recording');
-                        stopRecording();
-                    }
+                } else {
+                    // Send to worker for processing
+                    isProcessingWorkerMessage = true;
+                    audioWorker.postMessage({
+                        type: 'process',
+                        data: workerMessage
+                    }, [audioDataCopy.buffer]); // Transfer ownership
                 }
             }
         };
@@ -313,7 +395,7 @@ export async function startRecording(dotNetReference) {
         window.currentProcessor = processor;
         window.currentSource = source;
 
-        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other', 'Buffer size:', bufferSize, 'DSP: libsamplerate');
+        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other', 'Buffer size:', bufferSize, 'Processing: Web Worker');
 
     } catch (error) {
         console.error('Error starting recording:', error);
@@ -343,7 +425,7 @@ export function stopRecording() {
         window.currentAudioStream = null;
     }
 
-    // Clean up resampler
+    // Clean up resampler (if used for direct processing)
     if (resamplerInstance && libsamplerate) {
         try {
             resamplerInstance.destroy();
@@ -798,7 +880,7 @@ async function playAudioWithAudioElement(audioData) {
             floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
         }
 
-        // Create temporary context if needed (with resampling support)
+            // Create temporary context if needed (with resampling support)
         const tempContext = audioContext || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: TARGET_SAMPLE_RATE });
         
         // Resample if needed before creating buffer
@@ -977,6 +1059,19 @@ async function processAudioQueue() {
 export function cleanup() {
     // Stop recording if active
     stopRecording();
+
+    // Terminate worker
+    if (audioWorker) {
+        try {
+            audioWorker.postMessage({ type: 'terminate' });
+            audioWorker.terminate();
+            audioWorker = null;
+            workerInitialized = false;
+            console.log('Audio worker terminated');
+        } catch (e) {
+            console.warn('Error terminating worker:', e);
+        }
+    }
 
     // Clean up blob URLs
     blobUrlCache.forEach(url => {
