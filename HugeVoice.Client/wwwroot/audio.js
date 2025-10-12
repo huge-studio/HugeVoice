@@ -1,5 +1,6 @@
 ﻿// Audio recording and playback functionality for HugeVoice
 // Enhanced iOS/Safari compatibility with additional safety checks
+// DSP powered by libsamplerate.js for high-quality audio resampling
 
 let mediaRecorder = null;
 let audioContext = null;
@@ -7,6 +8,11 @@ let dotNetRef = null;
 let isAudioContextInitialized = false;
 let pendingAudioQueue = [];
 let isProcessingQueue = false;
+
+// libsamplerate.js integration
+let libsamplerate = null;
+let resamplerInstance = null;
+const TARGET_SAMPLE_RATE = 16000; // Target rate for transmission
 
 // iOS audio unlocking - multiple strategies
 let audioElement = null;
@@ -42,6 +48,71 @@ console.log('Audio module loading - Device detection:', {
     isMacSafari,
     userAgent: navigator.userAgent
 });
+
+// Initialize libsamplerate
+async function initializeLibsamplerate() {
+    if (libsamplerate) return true;
+    
+    try {
+        console.log('🎛️ Initializing libsamplerate.js for DSP...');
+        
+        // Import libsamplerate module
+        if (typeof LibSampleRate !== 'undefined') {
+            libsamplerate = LibSampleRate;
+            console.log('✅ libsamplerate.js loaded successfully');
+            return true;
+        } else {
+            throw new Error('libsamplerate.js not available - this is required for audio processing');
+        }
+    } catch (error) {
+        console.error('❌ Failed to initialize libsamplerate:', error);
+        throw error;
+    }
+}
+
+// Create resampler instance with libsamplerate
+function createResampler(fromRate, toRate, channels = 1) {
+    if (!libsamplerate) {
+        throw new Error('libsamplerate not initialized');
+    }
+    
+    try {
+        // Create resampler with SRC_SINC_MEDIUM_QUALITY converter type
+        // Available types: SRC_SINC_BEST_QUALITY, SRC_SINC_MEDIUM_QUALITY, SRC_SINC_FASTEST, SRC_ZERO_ORDER_HOLD, SRC_LINEAR
+        const converterType = libsamplerate.SRC_SINC_MEDIUM_QUALITY; // Balance between quality and performance
+        const resampler = libsamplerate.create(channels, fromRate, toRate, {
+            converterType: converterType
+        });
+        
+        console.log(`🎛️ Created libsamplerate resampler: ${fromRate}Hz → ${toRate}Hz (${channels}ch)`);
+        return resampler;
+    } catch (error) {
+        console.error('Failed to create resampler:', error);
+        throw error;
+    }
+}
+
+// Resample audio data using libsamplerate
+function resampleAudio(inputData, fromRate, toRate) {
+    if (fromRate === toRate) {
+        return inputData; // No resampling needed
+    }
+    
+    if (!libsamplerate) {
+        throw new Error('libsamplerate not initialized - cannot resample audio');
+    }
+    
+    try {
+        // Use libsamplerate for high-quality resampling
+        const outputData = libsamplerate.simple(inputData, fromRate, toRate, {
+            converterType: libsamplerate.SRC_SINC_MEDIUM_QUALITY
+        });
+        return outputData;
+    } catch (error) {
+        console.error('libsamplerate resampling failed:', error);
+        throw error;
+    }
+}
 
 // Create Audio element for iOS fallback with better error handling
 function createAudioElement() {
@@ -115,6 +186,9 @@ export async function startRecording(dotNetReference) {
     dotNetRef = dotNetReference;
 
     try {
+        // Initialize libsamplerate
+        await initializeLibsamplerate();
+        
         // Ensure audio is unlocked before recording
         await ensureAudioUnlocked();
 
@@ -132,7 +206,7 @@ export async function startRecording(dotNetReference) {
                 echoCancellation: { ideal: true },
                 noiseSuppression: { ideal: true },
                 autoGainControl: { ideal: true },
-                sampleRate: { ideal: isIPhone ? 44100 : 16000 }
+                sampleRate: { ideal: isIPhone ? 44100 : 48000 }
             }
         };
 
@@ -157,6 +231,14 @@ export async function startRecording(dotNetReference) {
         }
 
         const source = audioContext.createMediaStreamSource(stream);
+        const sourceSampleRate = audioContext.sampleRate;
+        
+        console.log(`🎤 Recording setup: ${sourceSampleRate}Hz → ${TARGET_SAMPLE_RATE}Hz`);
+
+        // Create resampler if rates differ
+        if (sourceSampleRate !== TARGET_SAMPLE_RATE) {
+            resamplerInstance = createResampler(sourceSampleRate, TARGET_SAMPLE_RATE, 1);
+        }
 
         // Use optimal buffer size based on device and iOS version
         let bufferSize;
@@ -193,11 +275,16 @@ export async function startRecording(dotNetReference) {
                         return; // Skip silent frames
                     }
 
-                    const samples = new Int16Array(inputData.length);
+                    // Resample audio using libsamplerate if needed
+                    let processedData = inputData;
+                    if (sourceSampleRate !== TARGET_SAMPLE_RATE) {
+                        processedData = resampleAudio(inputData, sourceSampleRate, TARGET_SAMPLE_RATE);
+                    }
 
                     // Convert to 16-bit PCM with clipping protection
-                    for (let i = 0; i < inputData.length; i++) {
-                        const sample = Math.max(-1, Math.min(1, inputData[i]));
+                    const samples = new Int16Array(processedData.length);
+                    for (let i = 0; i < processedData.length; i++) {
+                        const sample = Math.max(-1, Math.min(1, processedData[i]));
                         samples[i] = Math.round(sample < 0 ? sample * 0x8000 : sample * 0x7FFF);
                     }
 
@@ -226,7 +313,7 @@ export async function startRecording(dotNetReference) {
         window.currentProcessor = processor;
         window.currentSource = source;
 
-        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other', 'Buffer size:', bufferSize);
+        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other', 'Buffer size:', bufferSize, 'DSP: libsamplerate');
 
     } catch (error) {
         console.error('Error starting recording:', error);
@@ -256,6 +343,16 @@ export function stopRecording() {
         window.currentAudioStream = null;
     }
 
+    // Clean up resampler
+    if (resamplerInstance && libsamplerate) {
+        try {
+            resamplerInstance.destroy();
+        } catch (e) {
+            console.warn('Error destroying resampler:', e);
+        }
+        resamplerInstance = null;
+    }
+
     // Suspend but don't close context for reuse
     if (audioContext && audioContext.state !== 'closed') {
         audioContext.suspend();
@@ -267,6 +364,9 @@ export function stopRecording() {
 
 async function initializeAudioContext() {
     try {
+        // Initialize libsamplerate for DSP
+        await initializeLibsamplerate();
+        
         // Detect optimal sample rate
         let sampleRate;
         if (isIPhone && isIOS17Plus) {
@@ -274,9 +374,9 @@ async function initializeAudioContext() {
         } else if (isIPhone) {
             sampleRate = 44100;
         } else if (isIOS) {
-            sampleRate = 22050;
+            sampleRate = 44100;
         } else {
-            sampleRate = 16000;
+            sampleRate = 48000;
         }
 
         const contextOptions = {
@@ -366,7 +466,7 @@ export async function activateAudioContext() {
         }
 
         isAudioContextInitialized = true;
-        console.log('🎉 Audio fully activated! WebAudio:', isWebAudioUnlocked, 'AudioElement:', isAudioElementUnlocked);
+        console.log('🎉 Audio fully activated! WebAudio:', isWebAudioUnlocked, 'AudioElement:', isAudioElementUnlocked, 'DSP: libsamplerate');
 
         // Process any queued audio
         if (pendingAudioQueue.length > 0) {
@@ -618,9 +718,15 @@ async function playAudioWithWebAudio(audioData) {
             floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
         }
 
-        // Create audio buffer - use 16kHz as source rate
-        const audioBuffer = audioContext.createBuffer(1, floatSamples.length, 16000);
-        audioBuffer.getChannelData(0).set(floatSamples);
+        // Resample from TARGET_SAMPLE_RATE to audioContext.sampleRate if needed using libsamplerate
+        let resampledData = floatSamples;
+        if (TARGET_SAMPLE_RATE !== audioContext.sampleRate) {
+            resampledData = resampleAudio(floatSamples, TARGET_SAMPLE_RATE, audioContext.sampleRate);
+        }
+
+        // Create audio buffer with resampled data
+        const audioBuffer = audioContext.createBuffer(1, resampledData.length, audioContext.sampleRate);
+        audioBuffer.getChannelData(0).set(resampledData);
 
         // Create buffer source
         const source = audioContext.createBufferSource();
@@ -647,12 +753,11 @@ async function playAudioWithWebAudio(audioData) {
         // Add ended handler for cleanup
         source.onended = () => {
             currentPlaybackSource = null;
-            console.log('Web Audio playback ended');
         };
 
         source.start(0);
 
-        console.log('🎵 Web Audio playback - Length:', floatSamples.length, 'Gain:', gainValue);
+        console.log('🎵 Web Audio playback - Length:', resampledData.length, 'Gain:', gainValue, 'DSP: libsamplerate');
 
     } catch (error) {
         console.error('❌ Web Audio playback error:', error);
@@ -693,10 +798,17 @@ async function playAudioWithAudioElement(audioData) {
             floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
         }
 
-        // Create temporary context if needed
-        const tempContext = audioContext || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-        const audioBuffer = tempContext.createBuffer(1, floatSamples.length, 16000);
-        audioBuffer.getChannelData(0).set(floatSamples);
+        // Create temporary context if needed (with resampling support)
+        const tempContext = audioContext || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: TARGET_SAMPLE_RATE });
+        
+        // Resample if needed before creating buffer
+        let resampledData = floatSamples;
+        if (TARGET_SAMPLE_RATE !== tempContext.sampleRate) {
+            resampledData = resampleAudio(floatSamples, TARGET_SAMPLE_RATE, tempContext.sampleRate);
+        }
+        
+        const audioBuffer = tempContext.createBuffer(1, resampledData.length, tempContext.sampleRate);
+        audioBuffer.getChannelData(0).set(resampledData);
 
         // Convert to WAV blob
         const wav = audioBufferToWav(audioBuffer);
@@ -874,6 +986,16 @@ export function cleanup() {
 
     // Clear audio queue
     pendingAudioQueue = [];
+
+    // Clean up resampler
+    if (resamplerInstance && libsamplerate) {
+        try {
+            resamplerInstance.destroy();
+        } catch (e) {
+            console.warn('Error destroying resampler:', e);
+        }
+        resamplerInstance = null;
+    }
 
     // Close audio context if needed
     if (audioContext && audioContext.state !== 'closed') {
