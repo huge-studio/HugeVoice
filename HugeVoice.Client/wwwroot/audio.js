@@ -2,13 +2,19 @@
 // Enhanced iOS/Safari compatibility with additional safety checks
 // DSP powered by libsamplerate.js for high-quality audio resampling
 // Audio processing offloaded to Web Worker for better performance
+// SignalR hub integration in JS to minimize interop
 
 let mediaRecorder = null;
 let audioContext = null;
-let dotNetRef = null;
 let isAudioContextInitialized = false;
 let pendingAudioQueue = [];
 let isProcessingQueue = false;
+
+// SignalR hub connection (managed in JS)
+let hubConnection = null;
+let currentChannelId = null;
+let isRecording = false;
+let hasBroadcasterRole = false; // Track if we successfully obtained broadcaster role
 
 // Web Worker for audio processing
 let audioWorker = null;
@@ -53,6 +59,96 @@ console.log('Audio module loading - Device detection:', {
     isMacSafari,
     userAgent: navigator.userAgent
 });
+
+// Initialize SignalR hub connection
+async function initializeHub(hubUrl) {
+    // If we already have a connected hub for this URL, reuse it
+    if (hubConnection && hubConnection.state === 'Connected' && hubConnection.baseUrl === hubUrl) {
+        console.log('✅ Reusing existing hub connection');
+        return hubConnection;
+    }
+
+    // Clean up any existing connection first
+    if (hubConnection) {
+        console.log('⚠️ Cleaning up existing hub connection before creating new one');
+        try {
+            if (currentChannelId) {
+                await hubConnection.invoke('LeaveRoom', currentChannelId).catch(() => {});
+            }
+            await hubConnection.stop();
+        } catch (e) {
+            console.warn('Error stopping old connection:', e);
+        }
+        hubConnection = null;
+    }
+
+    try {
+        console.log('🔌 Initializing SignalR hub connection...');
+        
+        // SignalR should be loaded from CDN in index.html
+        if (!window.signalR) {
+            throw new Error('SignalR not available. Please ensure the SignalR script is loaded in index.html');
+        }
+        
+        const signalR = window.signalR;
+        
+        hubConnection = new signalR.HubConnectionBuilder()
+            .withUrl(hubUrl)
+            .withAutomaticReconnect()
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+        
+        // Store the base URL for comparison
+        hubConnection.baseUrl = hubUrl;
+
+        // Setup hub event handlers
+        hubConnection.on('ReceiveAudioChunk', (audioData) => {
+            // Queue audio for playback
+            if (audioData && audioData.length > 0) {
+                const base64Audio = btoa(String.fromCharCode.apply(null, audioData));
+                playAudio(base64Audio);
+            }
+        });
+
+        hubConnection.on('BroadcastError', (message) => {
+            console.error('❌ Broadcast error from server:', message);
+        });
+
+        hubConnection.onreconnecting(() => {
+            console.log('🔄 Hub reconnecting...');
+        });
+
+        hubConnection.onreconnected(async () => {
+            console.log('✅ Hub reconnected');
+            if (currentChannelId && isRecording) {
+                console.log(`Rejoining room ${currentChannelId} after reconnection`);
+                try {
+                    await hubConnection.invoke('JoinRoom', currentChannelId, true);
+                    await hubConnection.invoke('RequestBroadcasterRole', currentChannelId);
+                } catch (e) {
+                    console.error('Error rejoining after reconnection:', e);
+                }
+            }
+        });
+
+        hubConnection.onclose((error) => {
+            console.log('❌ Hub connection closed', error);
+            if (isRecording) {
+                console.error('Hub closed while recording - stopping recording');
+                stopRecording();
+            }
+        });
+
+        await hubConnection.start();
+        console.log('✅ SignalR hub connected. Connection ID:', hubConnection.connectionId);
+        
+        return hubConnection;
+    } catch (error) {
+        console.error('❌ Failed to initialize hub:', error);
+        hubConnection = null;
+        throw error;
+    }
+}
 
 // Initialize Web Worker for audio processing
 async function initializeAudioWorker() {
@@ -119,28 +215,6 @@ async function initializeLibsamplerate() {
     }
 }
 
-// Create resampler instance with libsamplerate
-function createResampler(fromRate, toRate, channels = 1) {
-    if (!libsamplerate) {
-        throw new Error('libsamplerate not initialized');
-    }
-    
-    try {
-        // Create resampler with SRC_SINC_FASTEST converter type
-        // Available types: SRC_SINC_BEST_QUALITY, SRC_SINC_MEDIUM_QUALITY, SRC_SINC_FASTEST, SRC_ZERO_ORDER_HOLD, SRC_LINEAR
-        const converterType = libsamplerate.SRC_SINC_FASTEST; // Fastest sinc interpolation for real-time performance
-        const resampler = libsamplerate.create(channels, fromRate, toRate, {
-            converterType: converterType
-        });
-        
-        console.log(`🎛️ Created libsamplerate resampler: ${fromRate}Hz → ${toRate}Hz (${channels}ch)`);
-        return resampler;
-    } catch (error) {
-        console.error('Failed to create resampler:', error);
-        throw error;
-    }
-}
-
 // Resample audio data using libsamplerate (for playback only)
 function resampleAudio(inputData, fromRate, toRate) {
     if (fromRate === toRate) {
@@ -173,8 +247,8 @@ function createAudioElement() {
         // iOS-specific settings
         if (isIOS) {
             audioElement.playsInline = true;
-            audioElement.setAttribute('playsinline', '');
-            audioElement.setAttribute('webkit-playsinline', '');
+            audioElement.setAttribute('playsinline', '' );
+            audioElement.setAttribute('webkit-playsinline', '' );
             audioElement.muted = false;
             audioElement.volume = 1.0;
         }
@@ -204,37 +278,143 @@ function createAudioElement() {
     return audioElement;
 }
 
-// Monitor audio interruptions (iOS)
-if (isIOS) {
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden && audioContext) {
-            console.log('Page hidden, suspending audio context');
-            audioContext.suspend();
-        } else if (!document.hidden && audioContext && isAudioContextInitialized) {
-            console.log('Page visible, resuming audio context');
-            audioContext.resume();
+// Monitor audio interruptions (iOS and general tab visibility)
+if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', async () => {
+        if (document.hidden) {
+            console.log('⚠️ Page hidden - audio context may be suspended');
+            if (audioContext && audioContext.state === 'running') {
+                console.log('Audio context is still running while hidden');
+                // Don't suspend - let it continue
+            }
+        } else {
+            console.log('✅ Page visible again');
+            // Resume audio context if it was suspended
+            if (audioContext && audioContext.state === 'suspended' && isAudioContextInitialized) {
+                try {
+                    await audioContext.resume();
+                    console.log('Resumed audio context after visibility change');
+                } catch (error) {
+                    console.error('Failed to resume audio context:', error);
+                }
+            }
+            
+            // If we were recording, make sure recording continues
+            if (isRecording && audioContext && audioContext.state === 'running') {
+                console.log('Recording should continue - audio context is running');
+            }
         }
     });
 
-    // Handle audio session interruptions
+    // Handle audio session interruptions (especially important for mobile)
     window.addEventListener('blur', () => {
-        if (audioSessionActive) {
-            console.log('Window blur detected, audio session may be interrupted');
+        console.log('⚠️ Window blur detected');
+        if (isRecording) {
+            console.log('Recording active during blur - keeping audio context alive');
+            // Prevent suspension by keeping context running
+            if (audioContext && audioContext.state === 'running') {
+                // Play a silent buffer to keep context active
+                try {
+                    const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+                    const source = audioContext.createBufferSource();
+                    source.buffer = buffer;
+                    const gainNode = audioContext.createGain();
+                    gainNode.gain.value = 0;
+                    source.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    source.start();
+                } catch (e) {
+                    console.log('Could not play keepalive buffer:', e);
+                }
+            }
         }
     });
 
     window.addEventListener('focus', async () => {
-        if (audioSessionActive && audioContext && audioContext.state === 'suspended') {
-            console.log('Window focused, attempting to resume audio');
-            await audioContext.resume();
+        console.log('✅ Window focused');
+        if (isRecording && audioContext) {
+            if (audioContext.state === 'suspended') {
+                console.log('Resuming suspended audio context on focus');
+                try {
+                    await audioContext.resume();
+                    console.log('Audio context resumed successfully');
+                } catch (error) {
+                    console.error('Failed to resume audio context:', error);
+                }
+            } else {
+                console.log('Audio context state:', audioContext.state);
+            }
         }
     });
+
+    // Additional iOS-specific handling
+    if (isIOS) {
+        // Monitor page lifecycle
+        if ('onpageshow' in window) {
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) {
+                    console.log('Page restored from cache');
+                    // Reset unlock states as they may be invalid
+                    isWebAudioUnlocked = false;
+                    isAudioElementUnlocked = false;
+                    isAudioContextInitialized = false;
+                }
+            });
+        }
+
+        // Handle beforeunload for cleanup
+        window.addEventListener('beforeunload', () => {
+            cleanup();
+        });
+    }
 }
 
-export async function startRecording(dotNetReference) {
-    dotNetRef = dotNetReference;
-
+// Start recording with SignalR integration in JS
+export async function startRecording(channelId, hubUrl) {
     try {
+        currentChannelId = channelId;
+        hasBroadcasterRole = false;
+        
+        console.log(`🎙️ Starting recording for channel: ${channelId}`);
+        
+        // Initialize hub connection
+        await initializeHub(hubUrl);
+        
+        if (!hubConnection || hubConnection.state !== 'Connected') {
+            throw new Error('Hub connection failed');
+        }
+        
+        console.log(`Hub connection state: ${hubConnection.state}, Connection ID: ${hubConnection.connectionId}`);
+        
+        // Join room as broadcaster through JavaScript connection
+        console.log(`Joining room ${channelId} as broadcaster through JS hub`);
+        await hubConnection.invoke('JoinRoom', channelId, true);
+        console.log(`✅ Joined room successfully`);
+        
+        // Request broadcaster role through JavaScript connection
+        console.log(`Requesting broadcaster role for ${channelId} through JS hub`);
+        const canBroadcast = await hubConnection.invoke('RequestBroadcasterRole', channelId);
+        
+        if (!canBroadcast) {
+            throw new Error('Failed to obtain broadcaster role - another broadcaster may be active');
+        }
+        
+        hasBroadcasterRole = true;
+        console.log(`✅ Successfully obtained broadcaster role for ${channelId}`);
+        console.log(`My connection ID: ${hubConnection.connectionId}`);
+        
+        // Test hub method availability
+        try {
+            console.log('🧪 Testing SendAudioChunkBase64 method...');
+            // Send a test chunk to verify the method works
+            const testBase64 = btoa(String.fromCharCode(0, 0, 0, 0)); // Tiny silent test
+            await hubConnection.invoke('SendAudioChunkBase64', channelId, testBase64);
+            console.log('✅ SendAudioChunkBase64 method verified working');
+        } catch (testError) {
+            console.error('❌ SendAudioChunkBase64 test failed:', testError);
+            throw new Error(`Cannot send audio - hub method test failed: ${testError.message}`);
+        }
+        
         // Initialize audio worker for processing
         await initializeAudioWorker();
         
@@ -312,25 +492,114 @@ export async function startRecording(dotNetReference) {
         const maxErrors = 5;
         let processingQueue = [];
         let isProcessingWorkerMessage = false;
+        let lastProcessTime = Date.now();
+        let keepaliveInterval = null;
+        let consecutiveErrors = 0; // Track consecutive errors vs total
+        let totalChunksProcessed = 0;
+        let totalChunksSent = 0;
+
+        // Keepalive mechanism to prevent browser from suspending processing
+        keepaliveInterval = setInterval(() => {
+            const timeSinceLastProcess = Date.now() - lastProcessTime;
+            if (timeSinceLastProcess > 1000 && isRecording) {
+                console.warn('⚠️ No audio processed in 1 second - checking state');
+                console.log('Audio context state:', audioContext.state);
+                console.log('Worker initialized:', workerInitialized);
+                console.log('Hub connection state:', hubConnection?.state);
+                console.log('Total chunks processed:', totalChunksProcessed);
+                console.log('Total chunks sent:', totalChunksSent);
+                console.log('Processing queue size:', processingQueue.length);
+                console.log('Consecutive errors:', consecutiveErrors);
+                
+                // Try to resume if suspended
+                if (audioContext.state === 'suspended') {
+                    console.log('Attempting to resume suspended audio context');
+                    audioContext.resume().catch(e => console.error('Resume failed:', e));
+                }
+                
+                // Check hub connection
+                if (hubConnection && hubConnection.state !== 'Connected') {
+                    console.error('❌ Hub connection lost! State:', hubConnection.state);
+                }
+            }
+        }, 2000); // Check every 2 seconds
 
         // Setup worker message handler
         audioWorker.onmessage = async function(e) {
             const { type, result, error } = e.data;
             
             if (type === 'processed') {
-                if (!result.silent && dotNetRef) {
+                lastProcessTime = Date.now(); // Update last process time
+                totalChunksProcessed++;
+                
+                if (!result.silent && hubConnection && hasBroadcasterRole) {
                     try {
-                        await dotNetRef.invokeMethodAsync('SendAudioData', result.base64Audio);
-                        errorCount = 0; // Reset error count on success
+                        // Check hub connection state before sending
+                        if (hubConnection.state !== 'Connected') {
+                            console.error('❌ Cannot send audio - hub not connected. State:', hubConnection.state);
+                            consecutiveErrors++;
+                            if (consecutiveErrors >= maxErrors) {
+                                console.error('Too many connection errors, stopping recording');
+                                stopRecording();
+                            }
+                            return;
+                        }
+                        
+                        // Verify we still have broadcaster role
+                        if (!hasBroadcasterRole) {
+                            console.error('❌ Cannot send audio - no longer have broadcaster role');
+                            consecutiveErrors++;
+                            if (consecutiveErrors >= maxErrors) {
+                                console.error('Lost broadcaster role, stopping recording');
+                                stopRecording();
+                            }
+                            return;
+                        }
+                        
+                        // Convert base64 to byte array for SignalR
+                        // Send as base64 string instead of byte array to avoid serialization issues
+                        const base64Audio = result.base64Audio;
+                        
+                        // Validate data before sending
+                        if (!base64Audio || base64Audio.length === 0) {
+                            console.warn('⚠️ Skipping empty audio chunk');
+                            return;
+                        }
+                        
+                        // Log first send for debugging
+                        if (totalChunksSent === 0) {
+                            console.log(`📤 Sending first audio chunk. Base64 length: ${base64Audio.length}`);
+                            console.log(`Channel: ${channelId}, Connection: ${hubConnection.connectionId}`);
+                        }
+                        
+                        // Send directly to SignalR hub with base64 string
+                        await hubConnection.invoke('SendAudioChunkBase64', channelId, base64Audio);
+                        totalChunksSent++;
+                        
+                        // Log progress every 50 chunks
+                        if (totalChunksSent % 50 === 0) {
+                            console.log(`📡 Sent ${totalChunksSent} audio chunks successfully`);
+                        }
+                        
+                        consecutiveErrors = 0; // Reset consecutive error count on success
+                        errorCount = 0; // Reset total error count on success
                     } catch (error) {
                         errorCount++;
-                        console.error('Error sending audio data to .NET:', error);
+                        consecutiveErrors++;
+                        console.error('❌ Error sending audio data to hub:', error);
+                        console.error('Hub state:', hubConnection?.state);
+                        console.error('Connection ID:', hubConnection?.connectionId);
+                        console.error('Has broadcaster role:', hasBroadcasterRole);
+                        console.error('Consecutive errors:', consecutiveErrors, '/ Total errors:', errorCount);
                         
-                        if (errorCount >= maxErrors) {
-                            console.error('Too many errors, stopping recording');
+                        // Only stop if we have many consecutive errors
+                        if (consecutiveErrors >= maxErrors) {
+                            console.error('Too many consecutive errors, stopping recording');
                             stopRecording();
                         }
                     }
+                } else if (!hasBroadcasterRole) {
+                    console.warn('⚠️ Processed audio but no broadcaster role - skipping send');
                 }
                 
                 // Process next item in queue
@@ -345,19 +614,25 @@ export async function startRecording(dotNetReference) {
                 }
             } else if (type === 'error') {
                 console.error('Worker processing error:', error);
-                errorCount++;
+                consecutiveErrors++;
                 
-                if (errorCount >= maxErrors) {
-                    console.error('Too many worker errors, stopping recording');
+                // Don't stop for worker errors - they might be transient
+                // Just log and continue
+                console.warn(`Worker error occurred (consecutive: ${consecutiveErrors}), continuing...`);
+                isProcessingWorkerMessage = false;
+                
+                // Only stop if worker is completely broken
+                if (consecutiveErrors >= maxErrors * 2) {
+                    console.error('Worker appears to be broken, stopping recording');
                     stopRecording();
-                } else {
-                    isProcessingWorkerMessage = false;
                 }
             }
         };
 
         processor.onaudioprocess = function (event) {
-            if (dotNetRef && audioContext.state === 'running' && workerInitialized) {
+            if (audioContext.state === 'running' && workerInitialized && isRecording) {
+                lastProcessTime = Date.now(); // Update last process time
+                
                 const inputData = event.inputBuffer.getChannelData(0);
                 
                 // Create transferable copy of audio data
@@ -372,17 +647,33 @@ export async function startRecording(dotNetReference) {
                     // Queue if worker is busy
                     processingQueue.push(workerMessage);
                     
-                    // Limit queue size
-                    if (processingQueue.length > 10) {
-                        processingQueue.shift(); // Drop oldest
+                    // Limit queue size to prevent memory issues
+                    if (processingQueue.length > 20) {
+                        const dropped = processingQueue.shift();
+                        console.warn('⚠️ Dropped audio chunk due to queue overflow. Queue size:', processingQueue.length);
                     }
                 } else {
                     // Send to worker for processing
                     isProcessingWorkerMessage = true;
-                    audioWorker.postMessage({
-                        type: 'process',
-                        data: workerMessage
-                    }, [audioDataCopy.buffer]); // Transfer ownership
+                    try {
+                        audioWorker.postMessage({
+                            type: 'process',
+                            data: workerMessage
+                        }, [audioDataCopy.buffer]); // Transfer ownership
+                    } catch (error) {
+                        console.error('Failed to send to worker:', error);
+                        isProcessingWorkerMessage = false;
+                        consecutiveErrors++;
+                    }
+                }
+            } else {
+                // Log why we're not processing
+                if (!isRecording) {
+                    console.log('Not processing - isRecording is false');
+                } else if (audioContext.state !== 'running') {
+                    console.warn('Not processing - audio context state:', audioContext.state);
+                } else if (!workerInitialized) {
+                    console.warn('Not processing - worker not initialized');
                 }
             }
         };
@@ -394,8 +685,20 @@ export async function startRecording(dotNetReference) {
         window.currentAudioStream = stream;
         window.currentProcessor = processor;
         window.currentSource = source;
+        window.currentKeepaliveInterval = keepaliveInterval;
+        
+        isRecording = true;
 
-        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other', 'Buffer size:', bufferSize, 'Processing: Web Worker');
+        console.log('Recording started - Device:', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other', 'Buffer size:', bufferSize, 'Processing: Web Worker + SignalR JS');
+        
+        // Log a reminder about tab visibility
+        if (document.hidden) {
+            console.warn('⚠️ WARNING: Recording started in a hidden tab. Some browsers may throttle audio processing.');
+        } else {
+            console.log('✅ Recording started in visible tab - optimal performance');
+        }
+        
+        return { success: true };
 
     } catch (error) {
         console.error('Error starting recording:', error);
@@ -403,11 +706,23 @@ export async function startRecording(dotNetReference) {
         if (window.currentAudioStream) {
             window.currentAudioStream.getTracks().forEach(track => track.stop());
         }
+        isRecording = false;
         throw error;
     }
 }
 
 export function stopRecording() {
+    isRecording = false;
+    hasBroadcasterRole = false;
+    
+    console.log(`🛑 Stopping recording for channel: ${currentChannelId}`);
+    
+    // Stop keepalive interval
+    if (window.currentKeepaliveInterval) {
+        clearInterval(window.currentKeepaliveInterval);
+        window.currentKeepaliveInterval = null;
+    }
+    
     // Clean up audio nodes
     if (window.currentProcessor) {
         window.currentProcessor.disconnect();
@@ -435,13 +750,64 @@ export function stopRecording() {
         resamplerInstance = null;
     }
 
-    // Suspend but don't close context for reuse
-    if (audioContext && audioContext.state !== 'closed') {
-        audioContext.suspend();
+    // Release broadcaster role through JavaScript hub connection
+    if (hubConnection && currentChannelId) {
+        try {
+            console.log(`Releasing broadcaster role for ${currentChannelId}`);
+            hubConnection.invoke('ReleaseBroadcasterRole', currentChannelId)
+                .then(() => {
+                    console.log('✅ Broadcaster role released');
+                    hasBroadcasterRole = false;
+                })
+                .catch(e => console.error('❌ Error releasing broadcaster role:', e));
+        } catch (e) {
+            console.warn('Error releasing broadcaster role:', e);
+        }
     }
 
-    dotNetRef = null;
-    console.log('Recording stopped');
+    // Don't suspend or close context - keep it ready for next session
+    // This prevents the context from being in suspended state when user starts again
+    if (audioContext && audioContext.state !== 'closed') {
+        // Keep context running for faster restart
+        console.log('Keeping audio context running for next session');
+    }
+
+    console.log('✅ Recording stopped');
+    
+    return { success: true };
+}
+
+// Join a listening room
+export async function joinListeningRoom(channelId, hubUrl) {
+    try {
+        currentChannelId = channelId;
+        
+        // Initialize hub connection
+        await initializeHub(hubUrl);
+        
+        // Join room as listener
+        await hubConnection.invoke('JoinRoom', channelId, false);
+        
+        console.log(`✅ Joined listening room: ${channelId}`);
+        
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Error joining listening room:', error);
+        throw error;
+    }
+}
+
+// Leave current room
+export async function leaveRoom() {
+    if (hubConnection && currentChannelId) {
+        try {
+            await hubConnection.invoke('LeaveRoom', currentChannelId);
+            currentChannelId = null;
+            console.log('✅ Left room');
+        } catch (error) {
+            console.error('❌ Error leaving room:', error);
+        }
+    }
 }
 
 async function initializeAudioContext() {
@@ -880,7 +1246,7 @@ async function playAudioWithAudioElement(audioData) {
             floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
         }
 
-            // Create temporary context if needed (with resampling support)
+        // Create temporary context if needed (with resampling support)
         const tempContext = audioContext || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: TARGET_SAMPLE_RATE });
         
         // Resample if needed before creating buffer
@@ -979,7 +1345,7 @@ function audioBufferToWav(buffer) {
         writeString(0, 'RIFF');
         view.setUint32(4, 36 + length * numberOfChannels * 2, true);
         writeString(8, 'WAVE');
-        writeString(12, 'fmt ');
+        writeString(12, 'fmt ' );
         view.setUint32(16, 16, true);
         view.setUint16(20, 1, true);
         view.setUint16(22, numberOfChannels, true);
@@ -1060,6 +1426,31 @@ export function cleanup() {
     // Stop recording if active
     stopRecording();
 
+    // Leave room and release broadcaster role
+    if (hubConnection && currentChannelId) {
+        try {
+            hubConnection.invoke('ReleaseBroadcasterRole', currentChannelId).catch(e => 
+                console.warn('Error releasing broadcaster role during cleanup:', e)
+            );
+        } catch (e) {
+            console.warn('Error in cleanup broadcaster role:', e);
+        }
+    }
+
+    // Leave room
+    leaveRoom();
+
+    // Close hub connection
+    if (hubConnection) {
+        try {
+            hubConnection.stop();
+            hubConnection = null;
+            console.log('SignalR hub disconnected');
+        } catch (e) {
+            console.warn('Error disconnecting hub:', e);
+        }
+    }
+
     // Terminate worker
     if (audioWorker) {
         try {
@@ -1107,6 +1498,56 @@ export function cleanup() {
     console.log('Audio module cleaned up');
 }
 
+// Diagnostic function - can be called from console
+export function getDiagnostics() {
+    const diagnostics = {
+        isRecording: isRecording,
+        hasBroadcasterRole: hasBroadcasterRole,
+        currentChannelId: currentChannelId,
+        audioContextState: audioContext?.state,
+        audioContextSampleRate: audioContext?.sampleRate,
+        workerInitialized: workerInitialized,
+        hubConnectionState: hubConnection?.state,
+        hubConnectionId: hubConnection?.connectionId,
+        hubBaseUrl: hubConnection?.baseUrl,
+        isAudioContextInitialized: isAudioContextInitialized,
+        isWebAudioUnlocked: isWebAudioUnlocked,
+        isAudioElementUnlocked: isAudioElementUnlocked,
+        pendingAudioQueueLength: pendingAudioQueue.length,
+        deviceInfo: {
+            isSafari: isSafari,
+            isIOS: isIOS,
+            isIPhone: isIPhone,
+            isIPad: isIPad,
+            iosVersion: iosVersion,
+            userAgent: navigator.userAgent
+        },
+        visibility: {
+            documentHidden: document.hidden,
+            visibilityState: document.visibilityState
+        },
+        streamInfo: {
+            hasStream: !!window.currentAudioStream,
+            streamActive: window.currentAudioStream?.active,
+            trackCount: window.currentAudioStream?.getTracks().length,
+            tracks: window.currentAudioStream?.getTracks().map(t => ({
+                kind: t.kind,
+                enabled: t.enabled,
+                muted: t.muted,
+                readyState: t.readyState
+            }))
+        }
+    };
+    
+    console.log('🔍 HugeVoice Audio Diagnostics:', diagnostics);
+    return diagnostics;
+}
+
+// Make diagnostic function available globally for debugging
+if (typeof window !== 'undefined') {
+    window.getAudioDiagnostics = getDiagnostics;
+}
+
 // Enhanced user interaction handling for iOS
 if (typeof window !== 'undefined') {
     console.log('🎧 Audio module loaded for', isIPhone ? 'iPhone' : isIOS ? 'iOS' : 'Other');
@@ -1148,44 +1589,4 @@ if (typeof window !== 'undefined') {
     unlockEvents.forEach(event => {
         document.addEventListener(event, unlockAudio, { capture: true, passive: false });
     });
-
-    // iOS-specific: Additional unlock attempts
-    if (isIOS) {
-        // Try to unlock when page becomes visible
-        document.addEventListener('visibilitychange', async () => {
-            if (!document.hidden) {
-                console.log('📱 Page became visible');
-
-                // Resume audio context if it was suspended
-                if (audioContext && audioContext.state === 'suspended' && isAudioContextInitialized) {
-                    try {
-                        await audioContext.resume();
-                        console.log('Resumed audio context after visibility change');
-                    } catch (error) {
-                        console.error('Failed to resume audio context:', error);
-                    }
-                }
-            }
-        });
-
-        // Monitor page lifecycle
-        if ('onpageshow' in window) {
-            window.addEventListener('pageshow', (event) => {
-                if (event.persisted) {
-                    console.log('Page restored from cache');
-                    // Reset unlock states as they may be invalid
-                    isWebAudioUnlocked = false;
-                    isAudioElementUnlocked = false;
-                    isAudioContextInitialized = false;
-                }
-            });
-        }
-
-        // Handle beforeunload for cleanup
-        window.addEventListener('beforeunload', () => {
-            if (audioContext) {
-                audioContext.close();
-            }
-        });
-    }
 }

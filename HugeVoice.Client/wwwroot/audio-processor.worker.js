@@ -7,6 +7,8 @@ importScripts('libsamplerate.min.js');
 let libsamplerate = null;
 let initialized = false;
 const TARGET_SAMPLE_RATE = 16000;
+let processedCount = 0;
+let droppedCount = 0;
 
 // Initialize libsamplerate
 function initializeLibsamplerate() {
@@ -89,6 +91,13 @@ function processAudioChunk(audioData, sourceSampleRate) {
         // Convert to base64
         const base64String = pcmToBase64(pcmSamples);
 
+        processedCount++;
+        
+        // Log stats every 100 chunks
+        if (processedCount % 100 === 0) {
+            console.log(`[Worker] Processed ${processedCount} chunks, dropped ${droppedCount}`);
+        }
+
         return {
             silent: false,
             base64Audio: base64String,
@@ -96,6 +105,7 @@ function processAudioChunk(audioData, sourceSampleRate) {
         };
     } catch (error) {
         console.error('[Worker] Error processing audio chunk:', error);
+        droppedCount++;
         throw error;
     }
 }
@@ -109,6 +119,8 @@ self.onmessage = function(e) {
             try {
                 const success = initializeLibsamplerate();
                 initialized = success;
+                processedCount = 0;
+                droppedCount = 0;
                 self.postMessage({
                     type: 'init-complete',
                     success: success
@@ -137,6 +149,7 @@ self.onmessage = function(e) {
                     result: result
                 });
             } catch (error) {
+                droppedCount++;
                 self.postMessage({
                     type: 'error',
                     error: error.message
@@ -144,7 +157,18 @@ self.onmessage = function(e) {
             }
             break;
 
+        case 'getStats':
+            self.postMessage({
+                type: 'stats',
+                stats: {
+                    processed: processedCount,
+                    dropped: droppedCount
+                }
+            });
+            break;
+
         case 'terminate':
+            console.log(`[Worker] Terminating. Final stats - Processed: ${processedCount}, Dropped: ${droppedCount}`);
             self.postMessage({
                 type: 'terminated'
             });

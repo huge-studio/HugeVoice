@@ -1,5 +1,4 @@
 @page "/broadcast"
-@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.JSInterop
 @using QRCoder
 @using HugeVoice.Client.Services
@@ -96,7 +95,7 @@
                         </div>
 
                         <!-- Channel Status Display -->
-                        @if (_hubConnection?.State == HubConnectionState.Connected && !string.IsNullOrEmpty(_channelId))
+                        @if (!string.IsNullOrEmpty(_channelId))
                         {
                             <div class="mb-3">
                                 <label class="form-label text-muted small">Channel Status</label>
@@ -111,15 +110,6 @@
                                                 <small class="text-success fw-bold">? You are the broadcaster</small>
                                             </div>
                                         }
-                                        else if (_channelHasBroadcaster)
-                                        {
-                                            <div class="d-flex align-items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle text-warning me-2" viewBox="0 0 16 16">
-                                                    <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-                                                </svg>
-                                                <small class="text-warning fw-bold">? Channel occupied by another broadcaster</small>
-                                            </div>
-                                        }
                                         else
                                         {
                                             <div class="d-flex align-items-center">
@@ -127,7 +117,7 @@
                                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                                                     <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
                                                 </svg>
-                                                <small class="text-success fw-bold">? Channel available for broadcasting</small>
+                                                <small class="text-success fw-bold">? Channel ready for broadcasting</small>
                                             </div>
                                         }
                                     </div>
@@ -149,69 +139,23 @@
                         </div>
 
                         <div class="d-grid gap-2">
-                            @if (_hubConnection?.State != HubConnectionState.Connected)
+                            @if (!_isRecording && !_isBroadcaster)
                             {
-                                <div class="alert alert-warning">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
-                                        <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-                                    <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
+                                <div class="alert alert-success">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle me-2" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                        <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
                                     </svg>
-                                    <strong>Connection Status:</strong> @(_hubConnection?.State.ToString() ?? "Not Connected")
+                                    <strong>Channel Ready:</strong> Ready to broadcast on <strong>@_channelId</strong>
                                 </div>
                                 
-                                <button @onclick="ConnectToHub" class="btn btn-primary btn-lg">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-broadcast me-2" viewBox="0 0 16 16">
-                                        <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM8 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+                                <button @onclick="StartRecording" class="btn btn-success btn-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-circle me-2" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                        <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
                                     </svg>
-                                    Create Channel
+                                    Start Broadcasting
                                 </button>
-                            }
-                            else if (!_isRecording && !_isBroadcaster)
-                            {
-                                @if (_channelHasBroadcaster)
-                                {
-                                    <div class="alert alert-warning">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
-                                            <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.60.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-                                    <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
-                                    </svg>
-                                    <strong>Channel Occupied:</strong> Another broadcaster is already active on <strong>@_channelId</strong>
-                                    </div>
-                                    
-                                    <button @onclick="DisconnectFromHub" class="btn btn-outline-secondary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle me-2" viewBox="0 0 16 16">
-                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                                        </svg>
-                                        Try Different Channel
-                                    </button>
-                                }
-                                else
-                                {
-                                    <div class="alert alert-success">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle me-2" viewBox="0 0 16 16">
-                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                            <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
-                                        </svg>
-                                        <strong>Channel Available:</strong> Ready to broadcast on <strong>@_channelId</strong>
-                                    </div>
-                                    
-                                    <button @onclick="StartRecording" class="btn btn-success btn-lg">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-circle me-2" viewBox="0 0 16 16">
-                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                            <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
-                                        </svg>
-                                        Start Broadcasting
-                                    </button>
-                                    
-                                    <button @onclick="DisconnectFromHub" class="btn btn-outline-secondary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle me-2" viewBox="0 0 16 16">
-                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                                        </svg>
-                                        Change Channel
-                                    </button>
-                                }
                             }
                             else if (_isRecording)
                             {
@@ -291,7 +235,6 @@
 }
 
 @code {
-    private HubConnection? _hubConnection;
     private string _channelId = "";
     private string _listenerUrl = "";
     private string _qrCodeDataUrl = "";
@@ -333,37 +276,13 @@
         try
         {
             _errorMessage = "";
-            var hubUrl = Navigation.ToAbsoluteUri("/audiohub");
-            Console.WriteLine($"Connecting to SignalR hub at: {hubUrl}");
-            
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl(hubUrl)
-                .ConfigureLogging(logging =>
-                {
-                    logging.SetMinimumLevel(LogLevel.Information);
-                })
-                .Build();
-
-            // Set up event handlers
-            _hubConnection.On<string, bool>("RoomStatus", OnRoomStatusChanged);
-            _hubConnection.On<string, string>("BroadcasterJoined", OnBroadcasterJoined);
-            _hubConnection.On<string, string>("BroadcasterLeft", OnBroadcasterLeft);
-            _hubConnection.On<string>("BroadcastError", OnBroadcastError);
-
-            Console.WriteLine("Starting SignalR connection...");
-            await _hubConnection.StartAsync();
-            Console.WriteLine($"SignalR connection successful. State: {_hubConnection.State}");
-            
-            Console.WriteLine($"Joining room: {_channelId}");
-            await _hubConnection.InvokeAsync("JoinRoom", _channelId, true); // true = joining as potential broadcaster
-            
-            Console.WriteLine($"Successfully joined room: {_channelId}");
+            Console.WriteLine($"Channel {_channelId} is ready for broadcasting");
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"SignalR connection error: {ex.Message}");
-            _errorMessage = $"Failed to connect to audio hub: {ex.Message}";
+            Console.WriteLine($"Error in ConnectToHub: {ex.Message}");
+            _errorMessage = $"Failed to setup channel: {ex.Message}";
             StateHasChanged();
         }
     }
@@ -372,16 +291,6 @@
     {
         try
         {
-            if (_hubConnection != null)
-            {
-                if (_isBroadcaster)
-                {
-                    await _hubConnection.InvokeAsync("ReleaseBroadcasterRole", _channelId);
-                }
-                await _hubConnection.DisposeAsync();
-                _hubConnection = null;
-            }
-            
             _isBroadcaster = false;
             _channelHasBroadcaster = false;
             _errorMessage = "";
@@ -400,13 +309,13 @@
         UpdateUrls();
         
         // Rejoin room if connected but not recording
-        if (_hubConnection?.State == HubConnectionState.Connected && !_isRecording)
+        if (_channelHasBroadcaster && !_isRecording)
         {
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await _hubConnection.InvokeAsync("JoinRoom", _channelId, true); // true = potential broadcaster
+                    // Logic to rejoin the room with new Channel ID if necessary
                 }
                 catch (Exception ex)
                 {
@@ -425,11 +334,11 @@
             UpdateUrls();
             
             // Rejoin room if connected but not recording
-            if (_hubConnection?.State == HubConnectionState.Connected && !_isRecording && !string.IsNullOrWhiteSpace(_channelId))
+            if (_channelHasBroadcaster && !_isRecording && !string.IsNullOrWhiteSpace(_channelId))
             {
                 try
                 {
-                    await _hubConnection.InvokeAsync("JoinRoom", _channelId, true); // true = potential broadcaster
+                    // Logic to rejoin the room with new Channel ID if necessary
                 }
                 catch (Exception ex)
                 {
@@ -472,50 +381,21 @@
                 return;
             }
             
-            if (_hubConnection == null)
-            {
-                _errorMessage = "Not connected to the server. Please try connecting first.";
-                StateHasChanged();
-                return;
-            }
-            
-            // Double-check broadcaster status with server before attempting
-            Console.WriteLine($"Double-checking broadcaster status for channel: {_channelId}");
-            var serverHasBroadcaster = await _hubConnection.InvokeAsync<bool>("CheckBroadcasterStatus", _channelId);
-            Console.WriteLine($"Server broadcaster status check result: {serverHasBroadcaster}");
-            
-            if (serverHasBroadcaster)
-            {
-                _errorMessage = "This channel already has an active broadcaster. Please try a different channel.";
-                _channelHasBroadcaster = true; // Update our local state
-                StateHasChanged();
-                return;
-            }
-            
-            // Request broadcaster role from server (server-side validation)
-            Console.WriteLine($"Requesting broadcaster role for channel: {_channelId}");
-            var canBroadcast = await _hubConnection.InvokeAsync<bool>("RequestBroadcasterRole", _channelId);
-            Console.WriteLine($"Broadcaster role request result: {canBroadcast}");
-            
-            if (!canBroadcast)
-            {
-                _errorMessage = "Another broadcaster became active on this channel just now. Please try a different channel.";
-                _channelHasBroadcaster = true; // Update our local state
-                StateHasChanged();
-                return;
-            }
-            
-            // If we get here, we successfully got broadcaster role
+            // JavaScript will handle ALL hub connection, broadcaster role, and audio transmission
             _isBroadcaster = true;
-            _channelHasBroadcaster = true; // We are now the broadcaster
+            _channelHasBroadcaster = true;
             _isRecording = true;
-            Console.WriteLine($"Successfully became broadcaster for channel: {_channelId}");
-            StateHasChanged(); // Refresh the page UI when broadcasting starts
+            Console.WriteLine($"Starting JavaScript recording for channel: {_channelId}");
+            StateHasChanged();
             
+            // Start recording using JavaScript with SignalR managed in JS
+            // JavaScript will join room and request broadcaster role with its own connection
             if (_jsModule != null)
             {
-                await _jsModule.InvokeVoidAsync("startRecording", 
-                    DotNetObjectReference.Create(this));
+                var hubUrl = Navigation.ToAbsoluteUri("/audiohub").ToString();
+                Console.WriteLine($"Starting JavaScript recording with hub URL: {hubUrl}");
+                await _jsModule.InvokeVoidAsync("startRecording", _channelId, hubUrl);
+                Console.WriteLine("JavaScript recording started successfully");
             }
         }
         catch (Exception ex)
@@ -524,7 +404,8 @@
             _errorMessage = $"Failed to start recording: {ex.Message}";
             _isBroadcaster = false;
             _isRecording = false;
-            StateHasChanged(); // Also refresh on error
+            
+            StateHasChanged();
         }
     }
 
@@ -535,14 +416,10 @@
             _isRecording = false;
             StateHasChanged();
             
+            // Stop recording in JavaScript (will also release broadcaster role through JS hub)
             if (_jsModule != null)
             {
                 await _jsModule.InvokeVoidAsync("stopRecording");
-            }
-            
-            if (_hubConnection != null && _isBroadcaster)
-            {
-                await _hubConnection.InvokeAsync("ReleaseBroadcasterRole", _channelId);
             }
             
             _isBroadcaster = false;
@@ -552,41 +429,6 @@
             _errorMessage = $"Failed to stop recording: {ex.Message}";
             StateHasChanged();
         }
-    }
-
-    private void OnRoomStatusChanged(string roomId, bool hasBroadcaster)
-    {
-        if (roomId == _channelId)
-        {
-            _channelHasBroadcaster = hasBroadcaster;
-            InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private void OnBroadcasterJoined(string roomId, string connectionId)
-    {
-        if (roomId == _channelId)
-        {
-            _channelHasBroadcaster = true;
-            InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private void OnBroadcasterLeft(string roomId, string connectionId)
-    {
-        if (roomId == _channelId)
-        {
-            _channelHasBroadcaster = false;
-            InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private void OnBroadcastError(string message)
-    {
-        _errorMessage = message;
-        _isRecording = false;
-        _isBroadcaster = false;
-        InvokeAsync(StateHasChanged);
     }
 
     private void ShowQRCodePopup()
@@ -601,42 +443,20 @@
         StateHasChanged();
     }
 
-    [JSInvokable]
-    public async Task SendAudioData(string base64AudioData)
-    {
-        try
-        {
-            if (_hubConnection != null && _isRecording && _isBroadcaster && !string.IsNullOrEmpty(base64AudioData))
-            {
-                var audioData = Convert.FromBase64String(base64AudioData);
-                await _hubConnection.InvokeAsync("SendAudioChunk", _channelId, audioData);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error sending audio data: {ex.Message}");
-        }
-    }
-
     public async ValueTask DisposeAsync()
     {
-        if (_hubConnection != null)
-        {
-            if (_isBroadcaster)
-            {
-                try
-                {
-                    await _hubConnection.InvokeAsync("ReleaseBroadcasterRole", _channelId);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error releasing broadcaster role during dispose: {ex.Message}");
-                }
-            }
-            await _hubConnection.DisposeAsync();
-        }
         if (_jsModule != null)
         {
+            // JavaScript will handle cleaning up hub connection and releasing broadcaster role
+            try
+            {
+                await _jsModule.InvokeVoidAsync("cleanup");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during cleanup: {ex.Message}");
+            }
+            
             await _jsModule.DisposeAsync();
         }
     }

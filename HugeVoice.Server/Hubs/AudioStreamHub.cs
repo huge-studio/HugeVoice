@@ -154,14 +154,20 @@ public class AudioStreamHub : Hub
     {
         try
         {
+            _logger.LogInformation("SendAudioChunk called - Room: {RoomId}, ConnectionId: {ConnectionId}, DataSize: {DataSize}", 
+                roomId, Context.ConnectionId, audioData?.Length ?? 0);
+            
             // Verify the caller is the active broadcaster for this room
             if (!_activeBroadcasters.TryGetValue(roomId, out var activeBroadcaster))
             {
-                _logger.LogWarning("Audio transmission attempt from {ConnectionId} in room {RoomId} - no active broadcaster for this room", 
-                    Context.ConnectionId, roomId);
+                _logger.LogWarning("Audio transmission attempt from {ConnectionId} in room {RoomId} - no active broadcaster for this room. Active broadcasters: {ActiveBroadcasters}", 
+                    Context.ConnectionId, roomId, string.Join(", ", _activeBroadcasters.Select(kvp => $"{kvp.Key}:{kvp.Value}")));
                 await Clients.Caller.SendAsync("BroadcastError", "No active broadcaster found for this channel. Please request broadcaster role first.");
                 return;
             }
+            
+            _logger.LogInformation("Checking broadcaster authorization - Caller: {ConnectionId}, ActiveBroadcaster: {ActiveBroadcaster}", 
+                Context.ConnectionId, activeBroadcaster);
             
             if (activeBroadcaster != Context.ConnectionId)
             {
@@ -177,11 +183,38 @@ public class AudioStreamHub : Hub
                 _logger.LogDebug("Sent audio chunk of {Size} bytes to room {RoomId} from broadcaster {ConnectionId}", 
                     audioData.Length, roomId, Context.ConnectionId);
             }
+            else
+            {
+                _logger.LogWarning("Empty or null audio data from {ConnectionId}", Context.ConnectionId);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending audio chunk to room {RoomId} from {ConnectionId}", roomId, Context.ConnectionId);
-            await Clients.Caller.SendAsync("BroadcastError", "Failed to send audio data. Please try reconnecting.");
+            _logger.LogError(ex, "Error sending audio chunk to room {RoomId} from {ConnectionId}. Error: {ErrorMessage}", 
+                roomId, Context.ConnectionId, ex.Message);
+            await Clients.Caller.SendAsync("BroadcastError", $"Failed to send audio data: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task SendAudioChunkBase64(string roomId, string base64AudioData)
+    {
+        try
+        {
+            // Convert base64 to byte array
+            var audioData = Convert.FromBase64String(base64AudioData);
+            
+            _logger.LogInformation("SendAudioChunkBase64 called - Room: {RoomId}, ConnectionId: {ConnectionId}, DataSize: {DataSize}", 
+                roomId, Context.ConnectionId, audioData.Length);
+            
+            // Use the existing SendAudioChunk logic
+            await SendAudioChunk(roomId, audioData);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing base64 audio chunk from {ConnectionId}. Error: {ErrorMessage}", 
+                Context.ConnectionId, ex.Message);
+            await Clients.Caller.SendAsync("BroadcastError", $"Failed to process audio data: {ex.Message}");
             throw;
         }
     }
