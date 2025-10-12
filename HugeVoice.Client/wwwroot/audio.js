@@ -3,12 +3,19 @@
 // DSP powered by libsamplerate.js for high-quality audio resampling
 // Audio processing offloaded to Web Worker for better performance
 // SignalR hub integration in JS to minimize interop
+// BUFFERED PLAYBACK for smooth continuous audio
 
 let mediaRecorder = null;
 let audioContext = null;
 let isAudioContextInitialized = false;
 let pendingAudioQueue = [];
 let isProcessingQueue = false;
+
+// Audio playback buffering system
+let audioPlaybackQueue = [];
+let nextPlaybackTime = 0;
+let isPlaybackSchedulerRunning = false;
+let BUFFER_SIZE = 0.2; // Keep 200ms of audio buffered for smooth playback
 
 // SignalR hub connection (managed in JS)
 let hubConnection = null;
@@ -103,10 +110,10 @@ async function initializeHub(hubUrl) {
 
         // Setup hub event handlers
         hubConnection.on('ReceiveAudioChunk', (audioData) => {
-            // Queue audio for playback
+            // Queue audio for buffered playback instead of immediate playback
             if (audioData && audioData.length > 0) {
                 const base64Audio = btoa(String.fromCharCode.apply(null, audioData));
-                playAudio(base64Audio);
+                queueAudioForPlayback(base64Audio);
             }
         });
 
@@ -1087,7 +1094,7 @@ export async function playAudio(audioData) {
             return;
         }
 
-        // If not fully unlocked, queue the audio
+        // If not fully unlocked, queue the audio using the old queue
         if (!isAudioContextInitialized || !audioContext || audioContext.state !== 'running') {
             console.log('🔄 Audio not ready, queuing audio data. Context state:', audioContext?.state);
             pendingAudioQueue.push(audioData);
@@ -1101,330 +1108,167 @@ export async function playAudio(audioData) {
             return;
         }
 
-        // Stop any current playback if needed
-        if (currentPlaybackSource) {
-            try {
-                currentPlaybackSource.stop();
-            } catch (e) {
-                // Already stopped
-            }
-            currentPlaybackSource = null;
-        }
-
-        // Try Web Audio API first, fallback to Audio element
-        if (isWebAudioUnlocked && audioContext.state === 'running') {
-            await playAudioWithWebAudio(audioData);
-        } else if (isAudioElementUnlocked) {
-            await playAudioWithAudioElement(audioData);
-        } else {
-            // Queue for later when unlocked
-            pendingAudioQueue.push(audioData);
-        }
+        // Use the new buffered playback system
+        queueAudioForPlayback(audioData);
 
     } catch (error) {
-        console.error('❌ Error playing audio:', error);
-
-        // Try fallback method
-        if (isAudioElementUnlocked && audioElement) {
-            try {
-                console.log('Attempting fallback audio playback');
-                await playAudioWithAudioElement(audioData);
-            } catch (fallbackError) {
-                console.error('❌ Fallback audio playback failed:', fallbackError);
-                pendingAudioQueue.push(audioData);
-            }
-        } else {
-            pendingAudioQueue.push(audioData);
-        }
+        console.error('❌ Error queuing audio:', error);
     }
 }
 
-async function playAudioWithWebAudio(audioData) {
-    try {
-        // Verify context is ready
-        if (!audioContext || audioContext.state !== 'running') {
-            throw new Error('Audio context not running');
-        }
+// NEW: Queue audio chunk for buffered playback
+function queueAudioForPlayback(base64AudioData) {
+    audioPlaybackQueue.push(base64AudioData);
+    
+    // Limit queue size to prevent memory issues (keep max 5 seconds)
+    const maxQueueSize = 250; // ~5 seconds at 50 chunks/sec
+    if (audioPlaybackQueue.length > maxQueueSize) {
+        const dropped = audioPlaybackQueue.length - maxQueueSize;
+        audioPlaybackQueue = audioPlaybackQueue.slice(-maxQueueSize);
+        console.warn(`⚠️ Audio queue overflow, dropped ${dropped} old chunks`);
+    }
+    
+    // Start playback scheduler if not running
+    if (!isPlaybackSchedulerRunning && audioContext && audioContext.state === 'running') {
+        startPlaybackScheduler();
+    }
+}
 
+// NEW: Scheduled playback system for smooth continuous audio
+async function startPlaybackScheduler() {
+    if (isPlaybackSchedulerRunning) return;
+    
+    isPlaybackSchedulerRunning = true;
+    nextPlaybackTime = audioContext.currentTime;
+    
+    console.log('🎵 Starting audio playback scheduler');
+    
+    scheduleNextAudioChunk();
+}
+
+// NEW: Schedule next audio chunk for seamless playback
+async function scheduleNextAudioChunk() {
+    if (!isPlaybackSchedulerRunning || !audioContext || audioContext.state !== 'running') {
+        isPlaybackSchedulerRunning = false;
+        return;
+    }
+    
+    // Schedule chunks while we have data and haven't scheduled too far ahead
+    const currentTime = audioContext.currentTime;
+    const scheduleAheadTime = currentTime + BUFFER_SIZE;
+    
+    let chunksScheduled = 0;
+    
+    while (audioPlaybackQueue.length > 0 && nextPlaybackTime < scheduleAheadTime) {
+        const base64AudioData = audioPlaybackQueue.shift();
+        
+        try {
+            const audioBuffer = await decodeAudioData(base64AudioData);
+            
+            if (audioBuffer) {
+                // Create source
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                
+                // Apply gain
+                const gainNode = audioContext.createGain();
+                let gainValue = 1.0;
+                
+                if (isIPhone && !isIOS17Plus) {
+                    gainValue = 1.2;
+                } else if (isIPad) {
+                    gainValue = 1.1;
+                }
+                
+                gainNode.gain.setValueAtTime(gainValue, audioContext.currentTime);
+                
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Schedule playback
+                // If nextPlaybackTime is in the past, schedule immediately
+                const playTime = Math.max(nextPlaybackTime, currentTime);
+                source.start(playTime);
+                
+                // Update next playback time to the end of this chunk
+                nextPlaybackTime = playTime + audioBuffer.duration;
+                
+                chunksScheduled++;
+            }
+        } catch (error) {
+            console.error('❌ Error scheduling audio chunk:', error);
+        }
+    }
+    
+    if (chunksScheduled > 0) {
+        console.log(`📅 Scheduled ${chunksScheduled} audio chunks, buffer: ${(nextPlaybackTime - currentTime).toFixed(3)}s`);
+    }
+    
+    // Schedule next batch
+    if (audioPlaybackQueue.length > 0) {
+        // Check again in 50ms
+        setTimeout(() => scheduleNextAudioChunk(), 50);
+    } else {
+        // No more data, check again in 100ms
+        setTimeout(() => scheduleNextAudioChunk(), 100);
+    }
+}
+
+// NEW: Decode audio data into AudioBuffer
+async function decodeAudioData(base64AudioData) {
+    try {
         // Convert base64 to byte array
-        const binaryString = atob(audioData);
+        const binaryString = atob(base64AudioData);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
         }
-
+        
         const samples = new Int16Array(bytes.buffer);
-
+        
         // Check for valid audio data
         if (samples.length === 0) {
-            throw new Error('Empty audio data');
+            return null;
         }
-
+        
         // Convert to float samples
         const floatSamples = new Float32Array(samples.length);
         for (let i = 0; i < samples.length; i++) {
             floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
         }
-
-        // Resample from TARGET_SAMPLE_RATE to audioContext.sampleRate if needed using libsamplerate
+        
+        // Resample from TARGET_SAMPLE_RATE to audioContext.sampleRate if needed
         let resampledData = floatSamples;
         if (TARGET_SAMPLE_RATE !== audioContext.sampleRate) {
             resampledData = resampleAudio(floatSamples, TARGET_SAMPLE_RATE, audioContext.sampleRate);
         }
-
-        // Create audio buffer with resampled data
+        
+        // Create audio buffer
         const audioBuffer = audioContext.createBuffer(1, resampledData.length, audioContext.sampleRate);
         audioBuffer.getChannelData(0).set(resampledData);
-
-        // Create buffer source
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-
-        // Store reference for cleanup
-        currentPlaybackSource = source;
-
-        // Apply gain with iOS-specific adjustments
-        const gainNode = audioContext.createGain();
-        let gainValue = 1.0;
-
-        if (isIPhone && !isIOS17Plus) {
-            gainValue = 1.2; // Older iPhones need boost
-        } else if (isIPad) {
-            gainValue = 1.1; // iPads slightly quieter
-        }
-
-        gainNode.gain.setValueAtTime(gainValue, audioContext.currentTime);
-
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        // Add ended handler for cleanup
-        source.onended = () => {
-            currentPlaybackSource = null;
-        };
-
-        source.start(0);
-
-        console.log('🎵 Web Audio playback - Length:', resampledData.length, 'Gain:', gainValue, 'DSP: libsamplerate');
-
-    } catch (error) {
-        console.error('❌ Web Audio playback error:', error);
-        throw error;
-    }
-}
-
-async function playAudioWithAudioElement(audioData) {
-    try {
-        if (!audioElement) {
-            createAudioElement();
-        }
-
-        // Check element state
-        if (audioElement.error) {
-            console.log('Audio element has error, recreating');
-            audioElement = null;
-            createAudioElement();
-        }
-
-        // Convert base64 to byte array
-        const binaryString = atob(audioData);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-
-        const samples = new Int16Array(bytes.buffer);
-
-        // Check for valid audio data
-        if (samples.length === 0) {
-            throw new Error('Empty audio data');
-        }
-
-        // Convert to float samples
-        const floatSamples = new Float32Array(samples.length);
-        for (let i = 0; i < samples.length; i++) {
-            floatSamples[i] = samples[i] / (samples[i] < 0 ? 0x8000 : 0x7FFF);
-        }
-
-        // Create temporary context if needed (with resampling support)
-        const tempContext = audioContext || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: TARGET_SAMPLE_RATE });
         
-        // Resample if needed before creating buffer
-        let resampledData = floatSamples;
-        if (TARGET_SAMPLE_RATE !== tempContext.sampleRate) {
-            resampledData = resampleAudio(floatSamples, TARGET_SAMPLE_RATE, tempContext.sampleRate);
-        }
-        
-        const audioBuffer = tempContext.createBuffer(1, resampledData.length, tempContext.sampleRate);
-        audioBuffer.getChannelData(0).set(resampledData);
-
-        // Convert to WAV blob
-        const wav = audioBufferToWav(audioBuffer);
-        const blob = new Blob([wav], { type: 'audio/wav' });
-        const url = URL.createObjectURL(blob);
-
-        // Track blob URL for cleanup
-        blobUrlCache.add(url);
-
-        // Set source and volume
-        audioElement.src = url;
-        audioElement.volume = isIPhone ? 1.0 : 0.9;
-
-        return new Promise((resolve, reject) => {
-            let playAttempts = 0;
-            const maxAttempts = 3;
-
-            const cleanup = () => {
-                URL.revokeObjectURL(url);
-                blobUrlCache.delete(url);
-                audioElement.removeEventListener('ended', onEnded);
-                audioElement.removeEventListener('error', onError);
-            };
-
-            const onEnded = () => {
-                console.log('Audio element playback ended');
-                cleanup();
-                resolve();
-            };
-
-            const onError = (error) => {
-                console.error('Audio element error:', error);
-                cleanup();
-                reject(error);
-            };
-
-            const attemptPlay = async () => {
-                try {
-                    audioElement.addEventListener('ended', onEnded, { once: true });
-                    audioElement.addEventListener('error', onError, { once: true });
-
-                    const playPromise = audioElement.play();
-                    if (playPromise !== undefined) {
-                        await playPromise;
-                        console.log('🎵 Audio element playback started');
-                    }
-                } catch (playError) {
-                    playAttempts++;
-                    console.error(`Play attempt ${playAttempts} failed:`, playError);
-
-                    if (playAttempts < maxAttempts) {
-                        // Wait and retry
-                        setTimeout(attemptPlay, 100);
-                    } else {
-                        cleanup();
-                        reject(playError);
-                    }
-                }
-            };
-
-            attemptPlay();
-        });
-
+        return audioBuffer;
     } catch (error) {
-        console.error('❌ Audio element playback error:', error);
-        throw error;
+        console.error('❌ Error decoding audio data:', error);
+        return null;
     }
 }
 
-// Convert AudioBuffer to WAV format with better error handling
-function audioBufferToWav(buffer) {
-    try {
-        const length = buffer.length;
-        const numberOfChannels = buffer.numberOfChannels;
-        const sampleRate = buffer.sampleRate;
-        const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
-        const view = new DataView(arrayBuffer);
-
-        // WAV header
-        const writeString = (offset, string) => {
-            for (let i = 0; i < string.length; i++) {
-                view.setUint8(offset + i, string.charCodeAt(i));
-            }
-        };
-
-        writeString(0, 'RIFF');
-        view.setUint32(4, 36 + length * numberOfChannels * 2, true);
-        writeString(8, 'WAVE');
-        writeString(12, 'fmt ' );
-        view.setUint32(16, 16, true);
-        view.setUint16(20, 1, true);
-        view.setUint16(22, numberOfChannels, true);
-        view.setUint32(24, sampleRate, true);
-        view.setUint32(28, sampleRate * numberOfChannels * 2, true);
-        view.setUint16(32, numberOfChannels * 2, true);
-        view.setUint16(34, 16, true);
-        writeString(36, 'data');
-        view.setUint32(40, length * numberOfChannels * 2, true);
-
-        // Convert float samples to 16-bit PCM
-        let offset = 44;
-        for (let i = 0; i < length; i++) {
-            for (let channel = 0; channel < numberOfChannels; channel++) {
-                const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
-                view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-                offset += 2;
-            }
-        }
-
-        return arrayBuffer;
-    } catch (error) {
-        console.error('Error converting to WAV:', error);
-        throw error;
-    }
-}
-
-async function processAudioQueue() {
-    if (isProcessingQueue || !audioContext || audioContext.state !== 'running') {
-        return;
-    }
-
-    isProcessingQueue = true;
-    console.log(`🔄 Processing ${pendingAudioQueue.length} queued audio buffers...`);
-
-    const processedCount = 0;
-    const maxProcessPerRun = 10; // Limit processing to prevent UI blocking
-
-    while (pendingAudioQueue.length > 0 && processedCount < maxProcessPerRun) {
-        const audioData = pendingAudioQueue.shift();
-        try {
-            if (isWebAudioUnlocked && audioContext.state === 'running') {
-                await playAudioWithWebAudio(audioData);
-            } else if (isAudioElementUnlocked) {
-                await playAudioWithAudioElement(audioData);
-            }
-
-            // Adaptive delay based on device
-            const delay = isIPhone ? 20 : isIOS ? 15 : 10;
-            await new Promise(resolve => setTimeout(resolve, delay));
-        } catch (error) {
-            console.error('❌ Error processing queued audio:', error);
-
-            // Re-queue on error if we haven't tried too many times
-            if (audioData._retryCount === undefined) {
-                audioData._retryCount = 0;
-            }
-
-            if (audioData._retryCount < 3) {
-                audioData._retryCount++;
-                pendingAudioQueue.push(audioData);
-            }
-        }
-    }
-
-    isProcessingQueue = false;
-
-    // Schedule next batch if more items
-    if (pendingAudioQueue.length > 0) {
-        setTimeout(() => processAudioQueue(), 100);
-    }
-
-    console.log('✅ Processed audio batch, remaining in queue:', pendingAudioQueue.length);
+// Stop playback scheduler
+function stopPlaybackScheduler() {
+    isPlaybackSchedulerRunning = false;
+    audioPlaybackQueue = [];
+    nextPlaybackTime = 0;
+    console.log('🛑 Stopped audio playback scheduler');
 }
 
 // Cleanup function for memory management
 export function cleanup() {
     // Stop recording if active
     stopRecording();
+    
+    // Stop playback scheduler
+    stopPlaybackScheduler();
 
     // Leave room and release broadcaster role
     if (hubConnection && currentChannelId) {

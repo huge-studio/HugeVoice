@@ -14,4 +14,8 @@
     <ProjectReference Include="..\HugeVoice.Client\HugeVoice.Client.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\PublishProfiles\" />
+  </ItemGroup>
+
 </Project>
